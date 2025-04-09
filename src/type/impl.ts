@@ -1,16 +1,16 @@
-import { TextMessage, UserImMessage, UserInfo, WebSocketMessageData } from './define';
+import { TextMessage, UserInfo, WebSocketMessageData } from './define';
 import { CommandSource } from '../command';
 
 export class TextMessageImpl implements TextMessage {
-  public readonly addition: '{"img_files_info":[]}' = '{"img_files_info":[]}';
+  public readonly addition: '{"img_files_info":[]}' = '{"img_files_info":[]}' as const;
   public at_role_id: string = '';
   public at_user_id: string = '';
   public channel_id: string = '';
   public channel_type: number = 1;
-  public readonly heychat_ack_id: '0' = '0';
+  public readonly heychat_ack_id: '0' = '0' as const;
   public mention_channel_id: string = '';
   public msg: string = '';
-  public readonly msg_type: 10 = 10;
+  public readonly msg_type: 10 = 10 as const;
   public reply_id: string = '';
   public room_id: string = '';
   public at_all = false;
@@ -142,14 +142,5 @@ export class MessageImpl implements WebSocketMessageData, CommandSource {
     } else {
       this.send(msg as TextMessage);
     }
-  }
-}
-
-export class UserImMessageImpl extends MessageImpl implements UserImMessage, CommandSource {
-  public readonly msg: string;
-
-  public constructor(sender: (msg: TextMessage) => void, data: UserImMessage) {
-    super(sender, data, data);
-    this.msg = data.msg;
   }
 }

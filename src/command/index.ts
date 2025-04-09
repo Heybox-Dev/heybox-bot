@@ -109,7 +109,8 @@ class HeyBoxCommandUserArgument extends HeyBoxCommandArgument<null> {
     super(name, 6, description, required);
   }
 
-  public override parse(value: string): null | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public override parse(_value: string): null | undefined {
     return undefined;
   }
 }
@@ -151,7 +152,7 @@ export class HeyBoxCommandManager {
       const commandInfo = this.commands.get(commandName)!;
       let argOptions = command.command_info.options;
       const args: any = [];
-      for (let argument of commandInfo.arguments) {
+      for (const argument of commandInfo.arguments) {
         let arg: any = undefined;
         for (let i = 0; i < argOptions.length; i++) {
           const argOption = argOptions[i];
