@@ -4,10 +4,18 @@ import * as process from 'node:process';
 import { BotConfig } from './config';
 import { Constants } from './constants/constants';
 import { HeyBoxCommandManager } from './command';
-import { MessageImpl, UserImMessageImpl } from './type/impl';
+import { MessageImpl } from './type/impl';
 import { Logger } from 'winston';
 import dayjs from 'dayjs';
-import { CommandMessage, TextMessage, UserBaseInfo, UserImMessage, WebSocketMessage } from './type/define';
+import {
+  BotEvent,
+  BotEventCancelable,
+  CommandMessage,
+  EventCallback,
+  TextMessage,
+  UserBaseInfo,
+  WebSocketMessage
+} from './type/define';
 import { sendMessage } from './utils';
 import { LoggerFactory } from './logger';
 import * as fs from 'node:fs';
@@ -29,7 +37,7 @@ export class HeyBoxBot {
   /**
    * 命令管理器，用于处理和管理机器人接收到的各种命令
    */
-  private commandManager?: HeyBoxCommandManager;
+  private readonly commandManager?: HeyBoxCommandManager;
 
   /**
    * 事件管理器，用于处理和管理机器人接收到的各种事件
@@ -121,7 +129,6 @@ export class HeyBoxBot {
       this.logger = LoggerFactory.createLogger('HeyBoxBot', logPath, this.config.logLevel || 'info');
       this.logger.info(`HeyBox Bot starting...`);
       this.eventManager.listen('websocket-message', this.onWebsocketMsg);
-      this.eventManager.listen('user-message', this.onUserMessage);
       this.eventManager.listen('command-message', this.onCommandMessage);
       // 设置WebSocket消息监听器
       this.ws.on('message', event => {
@@ -144,8 +151,8 @@ export class HeyBoxBot {
    * @returns {HeyBoxBot} 返回HeyBoxBot实例，允许链式调用
    */
   public stop(): HeyBoxBot {
-    // 在停止之前触发'before-start'事件，传递当前实例
-    this.post('before-start', this).then(() => {
+    // 在停止之前触发'before-stop'事件，传递当前实例
+    this.post('before-stop', this).then(() => {
       // 如果WebSocket连接是打开的状态，关闭连接
       if (this.wsOpened) this.ws.close();
       // 在停止之后触发'after-stop'事件，传递当前实例
@@ -196,12 +203,12 @@ export class HeyBoxBot {
    * @param cancelable {boolean} 是否可取消，决定是否可以取消事件，为 true 时，处理器第一个参数会传入 Cancelable
    * @returns {(callback: (...args: any) => void) => void} 一个函数，接受事件回调并注册该回调到指定事件
    */
-  public subscribe(
-    event: string,
+  public subscribe<T extends BotEvent, C extends BotEventCancelable>(
+    event: T,
     namespace: string = 'gugle-event',
     priority: number = 100,
-    cancelable: boolean = false
-  ): (callback: (...args: any) => void) => void {
+    cancelable: C = false as C
+  ): (callback: EventCallback<T, C>) => void {
     return this.eventManager.subscribe(event, namespace, priority, cancelable);
   }
 
@@ -227,12 +234,7 @@ export class HeyBoxBot {
       try {
         // 解析JSON消息，并检查通知类型是否为用户消息
         const data: WebSocketMessage = JSON.parse(msg);
-        if (data.type === '5') {
-          // 处理用户消息
-          const userMsg: UserImMessage = data.data as UserImMessage;
-          const user: UserBaseInfo = userMsg.user_info.user_base_info;
-          bot.post('user-message', bot, user, new UserImMessageImpl(msg => bot.sendMsg(msg), userMsg)).then();
-        } else if (data.type === '50') {
+        if (data.type === '50') {
           const commandMsg: CommandMessage = data.data as CommandMessage;
           const user: UserBaseInfo = commandMsg.sender_info;
           bot.post('command-message', bot, user, commandMsg).then();
@@ -242,18 +244,6 @@ export class HeyBoxBot {
         bot.logger!.error(e);
       }
     }
-  }
-
-  /**
-   * 处理用户消息的函数
-   * 该函数记录用户发送的消息，并检查是否以命令前缀开头，如果是，则执行相应命令
-   * @param bot {HeyBoxBot} HeyBoxBot实例，用于访问机器人的功能和属性
-   * @param user {UserBaseInfo} 发送消息的用户信息
-   * @param userMsg {UserImMessage} 用户发送的消息内容
-   */
-  private onUserMessage(bot: HeyBoxBot, user: UserBaseInfo, userMsg: UserImMessageImpl) {
-    // 记录用户消息信息
-    bot.logger!.info(`[${user.nickname}|${user.user_id}] ${userMsg.msg}`);
   }
 
   private onCommandMessage(bot: HeyBoxBot, user: UserBaseInfo, commandMsg: CommandMessage) {
