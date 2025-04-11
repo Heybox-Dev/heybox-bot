@@ -19,6 +19,7 @@ import {
 import { sendMessage } from './utils';
 import { LoggerFactory } from './logger';
 import * as fs from 'node:fs';
+import * as cron from 'node-cron';
 
 /**
  * `HeyBoxBot` 类代表一个聊天机器人，用于处理命令和事件
@@ -182,6 +183,25 @@ export class HeyBoxBot {
     return function (executor: (...args: any) => boolean) {
       // 调用命令管理器的解析方法，根据传入的命令字符串和权限字符串来解析并执行命令
       commandManager?.parse(command, permission)(executor);
+    };
+  }
+
+  /**
+   * 定义一个 cron 方法，用于根据给定的 cron 表达式调度任务
+   *
+   * @param _cron cron 表达式，用于指定任务执行的时间
+   * @returns 返回一个函数，该函数接受一个执行器函数作为参数，并在指定时间执行该执行器函数
+   */
+  public cron(_cron: string): (executor: (bot: HeyBoxBot) => void) => void {
+    // 保存当前实例的引用，以便在后续的执行器函数中使用
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self: HeyBoxBot = this;
+    // 返回一个函数，该函数负责调度执行器函数
+    return function (executor: (bot: HeyBoxBot) => void) {
+      // 使用 cron 表达式调度任务，当时间匹配时执行执行器函数
+      cron.schedule(_cron, () => {
+        executor(self);
+      });
     };
   }
 

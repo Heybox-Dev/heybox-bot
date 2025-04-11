@@ -18,20 +18,20 @@ const initPackageJson = {
   author: 'author',
   license: 'LGPL-3.0-or-later',
   dependencies: {
-    'heybox-bot': '^1.0.24'
+    'heybox-bot': '^1.1.34'
   },
   devDependencies: {
-    '@eslint/js': '^9.9.1',
+    '@eslint/js': '^9.24.0',
     '@types/nodemon': '^1.19.6',
-    '@types/ws': '^8.5.12',
-    eslint: '^9.9.1',
+    '@types/ws': '^8.18.1',
+    eslint: '^9.24.0',
     'eslint-config-prettier': '^9.1.0',
-    'eslint-plugin-prettier': '^5.2.1',
-    globals: '^15.9.0',
-    prettier: '^3.3.3',
+    'eslint-plugin-prettier': '^5.2.6',
+    globals: '^15.15.0',
+    prettier: '^3.5.3',
     'ts-node': '^10.9.2',
-    typescript: '^5.5.4',
-    'typescript-eslint': '^8.3.0'
+    typescript: '^5.8.3',
+    'typescript-eslint': '^8.29.1'
   }
 };
 const initTsConfigJson = {
@@ -116,8 +116,8 @@ const initIndexTs =
   '\n' +
   "const bot: HeyBoxBot = new HeyBoxBot({ token:'your token' });\n" +
   '\n' +
-  'class MyBot {\n' +
-  "  @bot.command('test', '/test')\n" +
+  'new (class MyBot {\n' +
+  "  @bot.command('/test')\n" +
   '  public test(source: CommandSource) {\n' +
   "    source.success('test');\n" +
   '  }\n' +
@@ -126,9 +126,7 @@ const initIndexTs =
   '  public onWebsocketMsg(bot: HeyBoxBot, msg: RawData) {\n' +
   "    console.log(msg.toString('utf-8'));\n" +
   '  }\n' +
-  '}\n' +
-  '\n' +
-  'const myBot: MyBot = new MyBot();\n' +
+  '})()\n' +
   '\n' +
   'bot.start();\n';
 if (args.findIndex(arg => arg === 'init')) init();
