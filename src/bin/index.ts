@@ -18,7 +18,7 @@ const initPackageJson = {
   author: 'author',
   license: 'LGPL-3.0-or-later',
   dependencies: {
-    'heybox-bot': '^1.1.34'
+    'heybox-bot': '^1.2.35'
   },
   devDependencies: {
     '@eslint/js': '^9.24.0',
@@ -40,7 +40,11 @@ const initTsConfigJson = {
     module: 'commonjs',
     strict: true,
     esModuleInterop: true,
-    skipLibCheck: true
+    skipLibCheck: true,
+    baseUrl: './',
+    paths: {
+      '@/*': ['src/*']
+    }
   },
   include: ['src/**/*.ts'],
   exclude: ['src/**/*.d.ts', 'src/**/*.js']
@@ -106,7 +110,7 @@ const initEslintConfigMjs =
 const initNodemonJson = {
   watch: ['src'],
   ext: '.ts',
-  exec: 'ts-node --files src/define.ts'
+  exec: 'tsx src/index.ts'
 };
 
 const initIndexTs =

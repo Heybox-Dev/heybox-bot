@@ -1,4 +1,9 @@
-export interface BotConfig {
-  token: string;
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+export default interface BotConfig {
+  readonly token: string;
+  readonly logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  readonly proxy?: {
+    readonly host: string;
+    readonly port: number;
+    readonly protocol: 'http' | 'https';
+  };
 }
