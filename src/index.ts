@@ -1,22 +1,27 @@
+import { MessageBuilder } from '@/type/message';
 import { EventManager } from 'gugle-event';
 import { RawData, WebSocket } from 'ws';
 import * as process from 'node:process';
-import { BotConfig } from './config';
-import { Constants } from './constants/constants';
+import BotConfig from '@/config';
+import Constants from '@/constants';
 import { HeyBoxCommandManager } from './command';
-import { MessageImpl } from './type/impl';
+import { WSMsgImpl } from '@/type/impl';
 import { Logger } from 'winston';
 import dayjs from 'dayjs';
 import {
   BotEvent,
   BotEventCancelable,
-  CommandMessage,
+  CardMessageBtnClickWSMsgData,
+  CommandWSMsgData,
   EventCallback,
-  TextMessage,
+  Message,
+  SimpleUserInfo,
+  UserAddOrRemoveEmojiToMsgWSMsgData,
   UserBaseInfo,
-  WebSocketMessage
-} from './type/define';
-import { sendMessage } from './utils';
+  UserJoinOrLeaveRoomWSMsgData,
+  WebSocketWSMsg
+} from '@/type';
+import { HeyboxBotRuntimeContext, Util } from './utils';
 import { LoggerFactory } from './logger';
 import * as fs from 'node:fs';
 import * as cron from 'node-cron';
@@ -84,6 +89,16 @@ export class HeyBoxBot {
       `${Constants.WSS_URL}${Constants.COMMON_PARAMS}${Constants.TOKEN_PARAMS}${this.config.token || ''}`
     );
     // 当WebSocket连接打开时，启动定时器每30秒发送一个PING保持连接
+    this.ws.on('error', (e: Error) => {
+      let message = e.message;
+      const stack = e.stack;
+      if (message.endsWith('401')) {
+        this.logger?.error(`${stack}`);
+        message = '无法连接至 WebSocket 服务器，请检查你的 Token！ ';
+        throw new Error(message);
+      }
+      throw e;
+    });
     this.ws.on('open', () => {
       // 标记WebSocket连接已打开
       this.wsOpened = true;
@@ -131,6 +146,9 @@ export class HeyBoxBot {
       this.logger.info(`HeyBox Bot starting...`);
       this.eventManager.listen('websocket-message', this.onWebsocketMsg);
       this.eventManager.listen('command-message', this.onCommandMessage);
+      this.eventManager.listen('user-add-or-remove-emoji-to-msg', this.onUserAddOrRemoveEmojiToMsg);
+      this.eventManager.listen('user-join-or-leave-room', this.onUserJoinOrLeaveRoom);
+      this.eventManager.listen('card-message-btn-click', this.onCardMessageBtnClick);
       // 设置WebSocket消息监听器
       this.ws.on('message', event => {
         // 当接收到WebSocket消息时，触发'websocket-message'事件
@@ -139,6 +157,8 @@ export class HeyBoxBot {
       // 在启动后触发'after-start'事件，传递当前实例作为参数
       this.post('after-start', this).then();
     });
+    HeyboxBotRuntimeContext.setBot(this);
+    HeyboxBotRuntimeContext.setLogger(this.logger!);
     // 返回实例本身，支持链式调用
     return this;
   }
@@ -167,7 +187,7 @@ export class HeyBoxBot {
    *
    * @param command 命令的字符串表示，用于指定命令的结构和参数
    * @param permission 可选的权限字符串，用于限定执行该命令所需的权限
-   * @returns (executor: (...args: any) => boolean) => void 返回一个函数，该函数接受一个执行器函数作为参数，并在适当的时候调用它
+   * @returns {(executor: (...args: any) => boolean) => void} 返回一个函数，该函数接受一个执行器函数作为参数，并在适当的时候调用它
    *
    * @example
    * @ bot.command('/test {arg1: NUMBER} {arg2?: NUMBER}')
@@ -187,10 +207,14 @@ export class HeyBoxBot {
   }
 
   /**
-   * 定义一个 cron 方法，用于根据给定的 cron 表达式调度任务
+   * 定义一个 cron 装饰器，用于根据给定的 cron 表达式调度任务
    *
    * @param _cron cron 表达式，用于指定任务执行的时间
-   * @returns 返回一个函数，该函数接受一个执行器函数作为参数，并在指定时间执行该执行器函数
+   * @returns {(executor: (bot: HeyBoxBot) => void) => void} 返回一个函数，该函数接受一个执行器函数作为参数，并在指定时间执行该执行器函数
+   *
+   * @example
+   * @ bot.cron('0/30 * * * * *')
+   * public cron(bot: HeyBoxBot): void {}
    */
   public cron(_cron: string): (executor: (bot: HeyBoxBot) => void) => void {
     // 保存当前实例的引用，以便在后续的执行器函数中使用
@@ -207,6 +231,7 @@ export class HeyBoxBot {
 
   /**
    * 发布一个事件，触发该事件的所有监听器
+   *
    * @param event {string} 事件名称
    * @param args {...args: any} 传递给事件回调的参数
    * @returns {any[]} 事件回调的返回值（如果有）
@@ -216,18 +241,23 @@ export class HeyBoxBot {
   }
 
   /**
-   * 订阅一个事件，返回一个函数，该函数用于添加事件回调
+   * 定义一个事件订阅装饰器，用于根据事件触发回调
+   *
    * @param event {string} 事件名称
    * @param namespace {string} 命名空间，用于组织事件监听器
    * @param priority {number} 优先级，决定事件回调的执行顺序
    * @param cancelable {boolean} 是否可取消，决定是否可以取消事件，为 true 时，处理器第一个参数会传入 Cancelable
    * @returns {(callback: (...args: any) => void) => void} 一个函数，接受事件回调并注册该回调到指定事件
+   *
+   * @example
+   * @ bot.subscribe('after-start', true)
+   * public test(cancelable: Cancelable, bot: HeyBoxBot) {}
    */
   public subscribe<T extends BotEvent, C extends BotEventCancelable>(
     event: T,
+    cancelable: C = false as C,
     namespace: string = 'gugle-event',
-    priority: number = 100,
-    cancelable: C = false as C
+    priority: number = 100
   ): (callback: EventCallback<T, C>) => void {
     return this.eventManager.subscribe(event, namespace, priority, cancelable);
   }
@@ -253,11 +283,23 @@ export class HeyBoxBot {
     if (msg.startsWith('{') && msg.endsWith('}')) {
       try {
         // 解析JSON消息，并检查通知类型是否为用户消息
-        const data: WebSocketMessage = JSON.parse(msg);
+        const data: WebSocketWSMsg = JSON.parse(msg);
         if (data.type === '50') {
-          const commandMsg: CommandMessage = data.data as CommandMessage;
+          const commandMsg: CommandWSMsgData = data.data as CommandWSMsgData;
           const user: UserBaseInfo = commandMsg.sender_info;
           bot.post('command-message', bot, user, commandMsg).then();
+        } else if (data.type === '3001') {
+          const userJoinOrLeaveRoomWSMsgData: UserJoinOrLeaveRoomWSMsgData = data.data as UserJoinOrLeaveRoomWSMsgData;
+          const user: SimpleUserInfo = userJoinOrLeaveRoomWSMsgData.user_info;
+          bot.post('user-join-or-leave-room', bot, user, userJoinOrLeaveRoomWSMsgData).then();
+        } else if (data.type === '5003') {
+          const userAddOrRemoveEmojiToMsgWSMsgData: UserAddOrRemoveEmojiToMsgWSMsgData =
+            data.data as UserAddOrRemoveEmojiToMsgWSMsgData;
+          bot.post('user-add-or-remove-emoji-to-msg', bot, userAddOrRemoveEmojiToMsgWSMsgData).then();
+        } else if (data.type === 'card_message_btn_click') {
+          const cardMessageBtnClickWSMsgData: CardMessageBtnClickWSMsgData = data.data as CardMessageBtnClickWSMsgData;
+          const user: UserBaseInfo = cardMessageBtnClickWSMsgData.sender_info;
+          bot.post('card-message-btn-click', bot, user, cardMessageBtnClickWSMsgData).then();
         }
       } catch (e) {
         // 如果解析过程中出现错误，记录错误信息
@@ -266,9 +308,9 @@ export class HeyBoxBot {
     }
   }
 
-  private onCommandMessage(bot: HeyBoxBot, user: UserBaseInfo, commandMsg: CommandMessage) {
+  private onCommandMessage(bot: HeyBoxBot, user: UserBaseInfo, commandMsg: CommandWSMsgData) {
     bot.logger!.info(`[${user.nickname}|${user.user_id}] run command: ${commandMsg.command_info.name}`);
-    const userMsg: MessageImpl = new MessageImpl(msg => bot.sendMsg(msg), commandMsg, {
+    const userMsg: WSMsgImpl = new WSMsgImpl(msg => bot.sendMsg(msg), commandMsg, {
       room_id: commandMsg.room_base_info.room_id,
       room_nickname: commandMsg.room_base_info.room_name,
       channel_id: commandMsg.channel_base_info.channel_id,
@@ -279,7 +321,31 @@ export class HeyBoxBot {
     bot.commandManager?.execute(commandMsg, userMsg);
   }
 
-  public sendMsg(msg: TextMessage) {
-    sendMessage(this.config.token, msg);
+  private onUserAddOrRemoveEmojiToMsg(bot: HeyBoxBot, msg: UserAddOrRemoveEmojiToMsgWSMsgData) {
+    bot.logger!.info(`[unknown|${msg.user_id}] ${msg.is_add ? 'add' : 'remove'} ${msg.emoji} to msg`);
+  }
+
+  private onUserJoinOrLeaveRoom(bot: HeyBoxBot, user: UserBaseInfo, msg: UserJoinOrLeaveRoomWSMsgData) {
+    bot.logger!.info(
+      `[${user.nickname}|${user.user_id}] ${msg.state ? 'join' : 'leave'} room ${msg.room_base_info.room_name}`
+    );
+  }
+
+  private onCardMessageBtnClick(bot: HeyBoxBot, user: UserBaseInfo, msg: CardMessageBtnClickWSMsgData) {
+    bot.logger!.info(`[${user.nickname}|${user.user_id}] click ${msg.text} button(${msg.event}/${msg.value})`);
+  }
+
+  public sendMsgBy(callback: (builder: MessageBuilder) => void) {
+    const builder = new MessageBuilder();
+    callback(builder);
+    Util.sendMessage(builder.build()).then();
+  }
+
+  public sendMsg(msg: Message) {
+    Util.sendMessage(msg).then();
+  }
+
+  public getConfig(): BotConfig {
+    return this.config;
   }
 }

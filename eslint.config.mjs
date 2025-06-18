@@ -3,6 +3,7 @@ import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import configPrettier from 'eslint-config-prettier';
 import pluginPrettier from 'eslint-plugin-prettier/recommended';
+import { resolve } from '@babel/core/lib/vendor/import-meta-resolve.js';
 
 export default [
   { files: ['**/*.{js,mjs,cjs,ts,vue}'] },
@@ -27,5 +28,14 @@ export default [
       '**/shime-uni.d.ts',
       'eslint.config.mjs'
     ]
+  },
+  {
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', resolve(__dirname, 'src')]]
+        }
+      }
+    }
   }
 ];

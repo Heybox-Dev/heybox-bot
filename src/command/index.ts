@@ -1,10 +1,13 @@
-import { CommandMessage, ILogger, TextMessage } from '../type/define';
+import { CommandWSMsgData, ILogger, Message } from '@/type';
+import { MessageBuilder } from '@/type/message';
 
 export interface CommandSource {
-  success: (msg: TextMessage | string) => void;
-  fail: (msg: TextMessage | string) => void;
   getName: () => string;
   hasPermission: (permission: string) => boolean;
+  success: (msg: Message | string) => void;
+  fail: (msg: Message | string) => void;
+  successBy: (callback: (builder: MessageBuilder) => void) => void;
+  failBy: (callback: (builder: MessageBuilder) => void) => void;
 }
 
 class HeyBoxCommandArgument<T> {
@@ -146,7 +149,7 @@ export class HeyBoxCommandManager {
     this.commands.set(command.name, command);
   }
 
-  public execute(command: CommandMessage, ...prefixArgs: any): void {
+  public execute(command: CommandWSMsgData, ...prefixArgs: any): void {
     const commandName = command.command_info.name;
     if (this.commands.has(commandName)) {
       const commandInfo = this.commands.get(commandName)!;
