@@ -1,8 +1,22 @@
 // 导入必要的类型和接口
 import { CommandSource } from '@/command';
-import { ExtendedMarkdownMessageImpl, MarkdownUserMessageImpl, Message, UserMessage, UserMessageBuilder } from '@/type';
-import { ChannelBaseInfo, CommandInfo, RoomBaseInfo, UserBaseInfo, UserInfo } from '@/type/info';
-import { MessageBuilder } from '@/type/message';
+import {
+  ChannelBaseInfo,
+  CommandInfo,
+  RoomBaseInfo,
+  UserBaseInfo,
+  UserInfo,
+  SimpleUserInfo,
+  CommandUserInfo
+} from '@/type/info';
+import {
+  Message,
+  UserMessage,
+  UserMessageBuilder,
+  ExtendedMarkdownMessageImpl,
+  MarkdownUserMessageImpl,
+  MessageBuilder
+} from '@/type/message';
 
 // 定义WebSocket消息数据的基类型
 export declare type WSMsgData = {
@@ -16,15 +30,7 @@ export declare type CommandWSMsgData = WSMsgData & {
   channel_base_info: ChannelBaseInfo;
   command_info: CommandInfo;
   room_base_info: RoomBaseInfo;
-  sender_info: UserBaseInfo;
-};
-
-// 定义简单的用户信息类型
-export declare type SimpleUserInfo = {
-  avatar: string;
-  level: number;
-  nickname: string;
-  user_id: number;
+  sender_info: CommandUserInfo;
 };
 
 // 定义用户加入或离开房间的WebSocket消息数据类型

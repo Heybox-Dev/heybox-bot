@@ -18,7 +18,7 @@ const initPackageJson = {
   author: 'author',
   license: 'LGPL-3.0-or-later',
   dependencies: {
-    'heybox-bot': '^1.2.41'
+    'heybox-bot': '^1.2.42'
   },
   devDependencies: {
     '@eslint/js': '^9.24.0',
@@ -112,7 +112,7 @@ const initNodemonJson = {
 
 const initIndexTs =
   "import { HeyBoxBot } from 'heybox-bot';\n" +
-  "import { CommandSource } from 'heybox-bot/src/command';\n" +
+  "import { CommandSource } from 'heybox-bot/dist/command';\n" +
   "import { RawData } from 'ws';\n" +
   '\n' +
   "const bot: HeyBoxBot = new HeyBoxBot({ token:'your token' });\n" +

@@ -28,7 +28,6 @@ export {
 export {
   WSMsgData,
   CommandWSMsgData,
-  SimpleUserInfo,
   UserJoinOrLeaveRoomWSMsgData,
   UserAddOrRemoveEmojiToMsgWSMsgData,
   CardMessageBtnClickWSMsgData,
@@ -43,6 +42,8 @@ export {
 export {
   AvatarDecoration,
   UserBaseInfo,
+  CommandUserInfo,
+  SimpleUserInfo,
   UserInfo,
   ChannelBaseInfo,
   RoomBaseInfo,

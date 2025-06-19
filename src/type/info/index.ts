@@ -6,20 +6,28 @@ export declare type AvatarDecoration = {
   src_url: string;
 };
 
+// 定义简单的用户信息类型
+export declare type SimpleUserInfo = {
+  avatar: string;
+  level: number;
+  nickname: string;
+  user_id: number;
+};
+
+// 定义命令用户信息类型
+export declare type CommandUserInfo = SimpleUserInfo & {
+  roles: string[];
+};
+
 /**
  * 定义用户基础信息的类型，包括用户的头像、头像装饰、是否为机器人、等级等信息
  */
-export declare type UserBaseInfo = {
-  avatar: string;
+export declare type UserBaseInfo = CommandUserInfo & {
   avatar_decoration: AvatarDecoration;
   bot: boolean;
-  level: number;
   medals: any;
-  nickname: string;
-  roles: string[];
   room_nickname: string;
   tag: any;
-  user_id: number;
 };
 
 /**
@@ -84,7 +92,7 @@ export declare type CommandOption = {
 export declare type CommandInfo = {
   id: string;
   name: string;
-  options: CommandOption[];
+  options?: CommandOption[];
   type: number;
   images: CommandOptionImage[];
   files: CommandOptionFile[];

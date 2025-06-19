@@ -307,10 +307,14 @@ export class HeyBoxCommandManager {
     const commandName: string = command.command_info.name;
     if (this.commands.has(commandName)) {
       const commandInfo: HeyBoxCommand = this.commands.get(commandName)!;
-      let argOptions: CommandOption[] = command.command_info.options;
+      let argOptions: CommandOption[] | undefined = command.command_info.options;
       let optionFiles: CommandOptionFile[] = command.command_info.files;
       let optionImages: CommandOptionImage[] = command.command_info.images;
       // 将文件和图片信息关联到对应的参数上
+      if (!argOptions) {
+        commandInfo.executor(...prefixArgs);
+        return;
+      }
       for (let i: number = argOptions.length - 1; i >= 0; i--) {
         const files: CommandOptionFile | undefined = optionFiles?.filter(file => file.option_index === i)[0];
         const images: CommandOptionImage | undefined = optionImages?.filter(image => image.option_index === i)[0];
@@ -322,7 +326,7 @@ export class HeyBoxCommandManager {
       for (const argument of commandInfo.arguments) {
         let arg: any = undefined;
         for (let i = 0; i < argOptions.length; i++) {
-          const argOption = argOptions[i];
+          const argOption: CommandOption = argOptions[i];
           if (argument.name === argOption.name) {
             argOptions = argOptions.filter(option => option.name !== argOption.name);
             arg = argument.parse(argOption.value, argOption.file, argOption.image);
