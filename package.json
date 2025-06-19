@@ -5,8 +5,9 @@
   "files": [
     "dist"
   ],
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "dev": "pnpx nodemon exec babel-node",
     "build": "tsc && tsc-alias",
