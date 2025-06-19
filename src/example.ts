@@ -86,7 +86,7 @@ new (class MyBot {
           .card()
           .header('今日人品值')
           .divider()
-          .textWithImage(`${rp}`, wsMsgImpl.user_info.user_base_info.avatar, 'left')
+          .textWithImage(`${rp}`, wsMsgImpl.user_info.avatar, 'left')
           .buttons({ text: `${rp > 70 ? '好耶！' : rp > 40 ? '一般' : '6'}` });
       });
     } else {

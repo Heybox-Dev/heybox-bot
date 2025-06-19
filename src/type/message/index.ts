@@ -1,7 +1,7 @@
 // noinspection DuplicatedCode
 
 import Constants from '@/constants';
-import { UserInfo } from '@/type/info';
+import { SimpleUserInfo, UserInfo } from '@/type/info';
 import { Request, Util } from '@/utils';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -287,9 +287,9 @@ export class ExtendedMarkdownMessageImpl extends AbstractMessageImpl implements 
    * @param user 用户信息
    * @returns 当前实例，支持链式调用
    */
-  public at(user: UserInfo): this {
+  public at(user: SimpleUserInfo): this {
     if (this.at_user_id != '') this.at_user_id += ',';
-    const userId = user.user_base_info.user_id;
+    const userId = user.user_id;
     this.at_user_id += `${userId}`;
     this.text(`@{id:${userId}} `);
     return this;

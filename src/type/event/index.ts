@@ -1,9 +1,8 @@
 import { HeyBoxBot } from '@/index';
-import { UserBaseInfo } from '@/type/info';
+import { UserBaseInfo, SimpleUserInfo } from '@/type/info';
 import {
   CardMessageBtnClickWSMsgData,
   CommandWSMsgData,
-  SimpleUserInfo,
   UserAddOrRemoveEmojiToMsgWSMsgData,
   UserJoinOrLeaveRoomWSMsgData
 } from '@/type/websocket';

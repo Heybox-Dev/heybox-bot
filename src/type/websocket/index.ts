@@ -103,7 +103,7 @@ export class WSMsgImpl implements WSMsgData, CommandSource {
   public readonly room_id: string;
   public readonly room_nickname: string;
   public readonly send_time: number;
-  public readonly user_info: UserInfo;
+  public readonly user_info: SimpleUserInfo;
   // 消息发送函数
   private readonly sender: (msg: Message) => void;
   // 用户消息发送函数
@@ -126,7 +126,7 @@ export class WSMsgImpl implements WSMsgData, CommandSource {
       channel_type: number;
       room_id: string;
       room_nickname: string;
-      user_info: UserInfo;
+      user_info: SimpleUserInfo;
     }
   ) {
     this.msg_id = data.msg_id;
@@ -146,7 +146,7 @@ export class WSMsgImpl implements WSMsgData, CommandSource {
    * @returns 用户昵称
    */
   public getName(): string {
-    return this.user_info.user_base_info.nickname;
+    return this.user_info.nickname;
   }
 
   /**
@@ -226,10 +226,10 @@ export class WSMsgImpl implements WSMsgData, CommandSource {
   public replyUser(msg: UserMessage | string) {
     if (typeof msg === 'string') {
       msg = MarkdownUserMessageImpl.create()
-        .to(this.user_info.user_base_info.user_id)
+        .to(this.user_info.user_id)
         .text(msg as string);
     } else {
-      msg.to_user_id = this.user_info.user_base_info.user_id;
+      msg.to_user_id = this.user_info.user_id;
     }
     this.userSender(msg as UserMessage);
   }

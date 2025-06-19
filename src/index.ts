@@ -1,11 +1,9 @@
-import { MessageBuilder, UserMessage, UserMessageBuilder } from '@/type/message';
 import { EventManager } from 'gugle-event';
 import { RawData, WebSocket } from 'ws';
 import * as process from 'node:process';
 import BotConfig from '@/config';
 import Constants from '@/constants';
 import { HeyBoxCommandManager } from '@/command';
-import { WSMsgImpl } from '@/type/impl';
 import { Logger } from 'winston';
 import dayjs from 'dayjs';
 import {
@@ -19,7 +17,11 @@ import {
   UserAddOrRemoveEmojiToMsgWSMsgData,
   UserBaseInfo,
   UserJoinOrLeaveRoomWSMsgData,
-  WebSocketWSMsg
+  WebSocketWSMsg,
+  MessageBuilder,
+  UserMessage,
+  UserMessageBuilder,
+  WSMsgImpl
 } from '@/type';
 import { HeyboxBotRuntimeContext, Request } from '@/utils';
 import { LoggerFactory } from '@/logger';
@@ -287,7 +289,7 @@ export class HeyBoxBot {
         const data: WebSocketWSMsg = JSON.parse(msg);
         if (data.type === '50') {
           const commandMsg: CommandWSMsgData = data.data as CommandWSMsgData;
-          const user: UserBaseInfo = commandMsg.sender_info;
+          const user: SimpleUserInfo = commandMsg.sender_info;
           bot.post('command-message', bot, user, commandMsg).then();
         } else if (data.type === '3001') {
           const userJoinOrLeaveRoomWSMsgData: UserJoinOrLeaveRoomWSMsgData = data.data as UserJoinOrLeaveRoomWSMsgData;
@@ -326,7 +328,7 @@ export class HeyBoxBot {
       channel_id: commandMsg.channel_base_info.channel_id,
       channel_name: commandMsg.channel_base_info.channel_name,
       channel_type: commandMsg.channel_base_info.channel_type,
-      user_info: { user_base_info: commandMsg.sender_info }
+      user_info: commandMsg.sender_info
     });
 
     // 执行对应命令

@@ -18,7 +18,7 @@ const initPackageJson = {
   author: 'author',
   license: 'LGPL-3.0-or-later',
   dependencies: {
-    'heybox-bot': '^1.2.42'
+    'heybox-bot': '^1.2.44'
   },
   devDependencies: {
     '@eslint/js': '^9.24.0',
