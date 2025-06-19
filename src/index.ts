@@ -1,4 +1,4 @@
-import { MessageBuilder } from '@/type/message';
+import { MessageBuilder, UserMessage, UserMessageBuilder } from '@/type/message';
 import { EventManager } from 'gugle-event';
 import { RawData, WebSocket } from 'ws';
 import * as process from 'node:process';
@@ -21,7 +21,7 @@ import {
   UserJoinOrLeaveRoomWSMsgData,
   WebSocketWSMsg
 } from '@/type';
-import { HeyboxBotRuntimeContext, Util } from './utils';
+import { HeyboxBotRuntimeContext, Request, Util } from './utils';
 import { LoggerFactory } from './logger';
 import * as fs from 'node:fs';
 import * as cron from 'node-cron';
@@ -88,7 +88,7 @@ export class HeyBoxBot {
     this.ws = new WebSocket(
       `${Constants.WSS_URL}${Constants.COMMON_PARAMS}${Constants.TOKEN_PARAMS}${this.config.token || ''}`
     );
-    // 当WebSocket连接打开时，启动定时器每30秒发送一个PING保持连接
+    // 监听WebSocket连接错误事件
     this.ws.on('error', (e: Error) => {
       let message = e.message;
       const stack = e.stack;
@@ -99,6 +99,7 @@ export class HeyBoxBot {
       }
       throw e;
     });
+    // 当WebSocket连接打开时，启动定时器每30秒发送一个PING保持连接
     this.ws.on('open', () => {
       // 标记WebSocket连接已打开
       this.wsOpened = true;
@@ -282,7 +283,7 @@ export class HeyBoxBot {
     // 如果消息是JSON格式，则尝试解析并处理
     if (msg.startsWith('{') && msg.endsWith('}')) {
       try {
-        // 解析JSON消息，并检查通知类型是否为用户消息
+        // 解析JSON消息
         const data: WebSocketWSMsg = JSON.parse(msg);
         if (data.type === '50') {
           const commandMsg: CommandWSMsgData = data.data as CommandWSMsgData;
@@ -308,9 +309,18 @@ export class HeyBoxBot {
     }
   }
 
+  /**
+   * 当接收到命令消息时调用该方法处理
+   * @param bot 当前机器人实例
+   * @param user 发送命令的用户信息
+   * @param commandMsg 命令消息数据
+   */
   private onCommandMessage(bot: HeyBoxBot, user: UserBaseInfo, commandMsg: CommandWSMsgData) {
+    // 记录用户执行命令的日志
     bot.logger!.info(`[${user.nickname}|${user.user_id}] run command: ${commandMsg.command_info.name}`);
-    const userMsg: WSMsgImpl = new WSMsgImpl(msg => bot.sendMsg(msg), commandMsg, {
+
+    // 创建WSMsgImpl实例，封装消息发送方法和命令消息数据
+    const userMsg: WSMsgImpl = new WSMsgImpl(bot.sendMsg, bot.sendUserMsg, commandMsg, {
       room_id: commandMsg.room_base_info.room_id,
       room_nickname: commandMsg.room_base_info.room_name,
       channel_id: commandMsg.channel_base_info.channel_id,
@@ -318,33 +328,89 @@ export class HeyBoxBot {
       channel_type: commandMsg.channel_base_info.channel_type,
       user_info: { user_base_info: commandMsg.sender_info }
     });
+
+    // 执行对应命令
     bot.commandManager?.execute(commandMsg, userMsg);
   }
 
+  /**
+   * 当用户对消息添加或移除表情时调用该方法处理
+   * @param bot 当前机器人实例
+   * @param msg 用户添加或移除表情的消息数据
+   */
   private onUserAddOrRemoveEmojiToMsg(bot: HeyBoxBot, msg: UserAddOrRemoveEmojiToMsgWSMsgData) {
+    // 记录用户添加或移除表情的日志
     bot.logger!.info(`[unknown|${msg.user_id}] ${msg.is_add ? 'add' : 'remove'} ${msg.emoji} to msg`);
   }
 
+  /**
+   * 当用户加入或离开房间时调用该方法处理
+   * @param bot 当前机器人实例
+   * @param user 加入或离开房间的用户信息
+   * @param msg 用户加入或离开房间的消息数据
+   */
   private onUserJoinOrLeaveRoom(bot: HeyBoxBot, user: UserBaseInfo, msg: UserJoinOrLeaveRoomWSMsgData) {
+    // 记录用户加入或离开房间的日志
     bot.logger!.info(
       `[${user.nickname}|${user.user_id}] ${msg.state ? 'join' : 'leave'} room ${msg.room_base_info.room_name}`
     );
   }
 
+  /**
+   * 当用户点击卡片消息按钮时调用该方法处理
+   * @param bot 当前机器人实例
+   * @param user 点击按钮的用户信息
+   * @param msg 卡片消息按钮点击事件数据
+   */
   private onCardMessageBtnClick(bot: HeyBoxBot, user: UserBaseInfo, msg: CardMessageBtnClickWSMsgData) {
+    // 记录用户点击按钮的日志
     bot.logger!.info(`[${user.nickname}|${user.user_id}] click ${msg.text} button(${msg.event}/${msg.value})`);
   }
 
+  /**
+   * 通过回调函数构建并发送消息
+   * @param callback 用于构建消息的回调函数
+   */
   public sendMsgBy(callback: (builder: MessageBuilder) => void) {
     const builder = new MessageBuilder();
     callback(builder);
-    Util.sendMessage(builder.build()).then();
+    // 发送构建的消息
+    Request.sendMessage(builder.build()).then();
   }
 
+  /**
+   * 发送消息对象
+   * @param msg 要发送的消息对象
+   */
   public sendMsg(msg: Message) {
-    Util.sendMessage(msg).then();
+    // 发送消息
+    Request.sendMessage(msg).then();
   }
 
+  /**
+   * 通过回调函数构建并发送用户消息
+   * @param callback 用于构建用户消息的回调函数
+   */
+  public sendUserMsgBy(callback: (builder: UserMessageBuilder) => void) {
+    const builder = new UserMessageBuilder();
+    callback(builder);
+    // 发送构建的用户消息
+    Request.sendUserMessage(builder.build()).then();
+  }
+
+  /**
+   * 发送用户消息对象
+   * @param msg 要发送的用户消息对象
+   */
+  public sendUserMsg(msg: UserMessage) {
+    // 发送用户消息
+    Request.sendUserMessage(msg).then();
+  }
+
+  /**
+   * 获取机器人的配置
+   * @returns 机器人的配置对象
+   */
   public getConfig(): BotConfig {
     return this.config;
   }

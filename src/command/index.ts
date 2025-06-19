@@ -1,6 +1,9 @@
 import { CommandWSMsgData, ILogger, Message } from '@/type';
 import { MessageBuilder } from '@/type/message';
 
+/**
+ * 定义命令源接口，用于执行命令后的反馈
+ */
 export interface CommandSource {
   getName: () => string;
   hasPermission: (permission: string) => boolean;
@@ -10,6 +13,9 @@ export interface CommandSource {
   failBy: (callback: (builder: MessageBuilder) => void) => void;
 }
 
+/**
+ * 定义一个命令参数的类，用于解析和处理命令中的参数
+ */
 class HeyBoxCommandArgument<T> {
   public readonly name: string;
   public readonly type: number;
@@ -23,11 +29,29 @@ class HeyBoxCommandArgument<T> {
     this.required = required;
   }
 
+  /**
+   * 将给定的字符串值解析为指定类型T
+   * 此函数主要用于类型转换，它假设传入的字符串可以安全地被视为类型T
+   * 如果类型转换失败，函数将返回undefined
+   *
+   * @param value 待解析的字符串值
+   * @returns 返回解析后的值，如果解析失败则返回undefined
+   */
   public parse(value: string): T | undefined {
     return value as T;
   }
 
+  /**
+   * 解析命令参数的逻辑，根据参数类型创建不同的参数对象
+   * 此函数处理特定格式的字符串参数，将其转换为相应的命令参数对象
+   * 支持解析STRING、NUMBER、BOOLEAN和USER类型的参数，以及自定义选项参数
+   *
+   * @param argument 命令参数字符串，格式如"{name:TYPE}"
+   * @returns 返回解析后的HeyBoxCommandArgument对象
+   * @throws 如果参数格式不支持，抛出错误
+   */
   public static parseArgument(argument: string): HeyBoxCommandArgument<any> {
+    // 解析命令参数的逻辑，根据参数类型创建不同的参数对象
     if (argument.startsWith('{') && argument.endsWith('}')) {
       const nodes: string[] = argument.substring(1, argument.length - 1).split(':');
       let name = nodes[0].trim();
@@ -54,10 +78,14 @@ class HeyBoxCommandArgument<T> {
         }
       }
     }
+    // 如果参数格式不支持，抛出错误
     throw new Error(`Not implemented, argument: ${argument}`);
   }
 }
 
+/**
+ * 定义一个带有选项的命令参数类，继承自HeyBoxCommandArgument
+ */
 class HeyBoxCommandOptionArgument<T extends string> extends HeyBoxCommandArgument<T> {
   private readonly options: T[];
 
@@ -67,37 +95,50 @@ class HeyBoxCommandOptionArgument<T extends string> extends HeyBoxCommandArgumen
   }
 
   public override parse(value: string): T | undefined {
+    // 重写解析方法，如果值不在选项中则返回undefined
     if (!this.options.includes(value as T)) return value as T;
     else return undefined;
   }
 }
 
+/**
+ * 定义一个字符串类型的命令参数类，继承自HeyBoxCommandArgument
+ */
 class HeyBoxCommandStingArgument extends HeyBoxCommandArgument<string> {
   public constructor(name: string, description: string, required: boolean) {
     super(name, 9, description, required);
   }
 
   public override parse(value: string): string | undefined {
+    // 重写解析方法，直接返回字符串值
     return value;
   }
 }
 
+/**
+ * 定义一个数字类型的命令参数类，继承自HeyBoxCommandArgument
+ */
 class HeyBoxCommandNumberArgument extends HeyBoxCommandArgument<number> {
   public constructor(name: string, description: string, required: boolean) {
     super(name, 4, description, required);
   }
 
   public override parse(value: string): number | undefined {
+    // 重写解析方法，将字符串值解析为数字
     return Number.parseInt(value);
   }
 }
 
+/**
+ * 定义一个布尔类型的命令参数类，继承自HeyBoxCommandArgument
+ */
 class HeyBoxCommandBooleanArgument extends HeyBoxCommandArgument<boolean> {
   public constructor(name: string, description: string, required: boolean) {
     super(name, 5, description, required);
   }
 
   public override parse(value: string): boolean | undefined {
+    // 重写解析方法，将字符串值解析为布尔值
     if (value === 'True') {
       return true;
     } else if (value === 'False') {
@@ -107,6 +148,9 @@ class HeyBoxCommandBooleanArgument extends HeyBoxCommandArgument<boolean> {
   }
 }
 
+/**
+ * 定义一个用户类型的命令参数类，继承自HeyBoxCommandArgument
+ */
 class HeyBoxCommandUserArgument extends HeyBoxCommandArgument<null> {
   public constructor(name: string, description: string, required: boolean) {
     super(name, 6, description, required);
@@ -114,10 +158,14 @@ class HeyBoxCommandUserArgument extends HeyBoxCommandArgument<null> {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public override parse(_value: string): null | undefined {
+    // 重写解析方法，对于用户类型参数，暂时不进行解析
     return undefined;
   }
 }
 
+/**
+ * 定义一个命令类，用于管理命令的执行和相关信息
+ */
 class HeyBoxCommand {
   public readonly name;
   public readonly description: string;
@@ -133,6 +181,9 @@ class HeyBoxCommand {
   }
 }
 
+/**
+ * 定义一个命令管理器类，用于注册和执行命令
+ */
 export class HeyBoxCommandManager {
   public readonly commands: Map<string, HeyBoxCommand> = new Map<string, HeyBoxCommand>();
   public readonly logger: ILogger;
@@ -142,6 +193,7 @@ export class HeyBoxCommandManager {
   }
 
   public register(command: HeyBoxCommand): void {
+    // 注册命令的方法，如果命令已存在则记录错误
     if (this.commands.has(command.name)) {
       this.logger.error(`Command ${command.name} is already registered!`);
       return;
@@ -150,6 +202,7 @@ export class HeyBoxCommandManager {
   }
 
   public execute(command: CommandWSMsgData, ...prefixArgs: any): void {
+    // 执行命令的方法，根据命令名称和参数执行相应的逻辑
     const commandName = command.command_info.name;
     if (this.commands.has(commandName)) {
       const commandInfo = this.commands.get(commandName)!;
@@ -179,6 +232,7 @@ export class HeyBoxCommandManager {
     command: string,
     permission: string | undefined = undefined
   ): (executor: (...args: any) => boolean) => void {
+    // 解析命令字符串的方法，用于将命令字符串转换为命令对象并注册
     if (!command.startsWith('/')) throw new Error('Invalid command');
     const register = (command: HeyBoxCommand) => this.register(command);
     return function (executor: (...args: any) => boolean) {
