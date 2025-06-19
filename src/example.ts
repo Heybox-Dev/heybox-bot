@@ -1,9 +1,9 @@
 // 导入所需的工具类和模块
 import { WSMsgImpl } from '@/type';
 import { CommandFile, CommandImage, CommandUser } from '@/type/info';
-import { Util, SeededRandom } from './utils';
-import { CommandSource } from './command';
-import { HeyBoxBot } from './';
+import { Util, SeededRandom } from '@/utils';
+import { CommandSource } from '@/command';
+import { HeyBoxBot } from '@/index';
 import dayjs from 'dayjs';
 
 // 初始化HeyBoxBot实例

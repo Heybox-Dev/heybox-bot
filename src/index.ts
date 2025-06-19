@@ -4,7 +4,7 @@ import { RawData, WebSocket } from 'ws';
 import * as process from 'node:process';
 import BotConfig from '@/config';
 import Constants from '@/constants';
-import { HeyBoxCommandManager } from './command';
+import { HeyBoxCommandManager } from '@/command';
 import { WSMsgImpl } from '@/type/impl';
 import { Logger } from 'winston';
 import dayjs from 'dayjs';
@@ -21,8 +21,8 @@ import {
   UserJoinOrLeaveRoomWSMsgData,
   WebSocketWSMsg
 } from '@/type';
-import { HeyboxBotRuntimeContext, Request, Util } from './utils';
-import { LoggerFactory } from './logger';
+import { HeyboxBotRuntimeContext, Request } from '@/utils';
+import { LoggerFactory } from '@/logger';
 import * as fs from 'node:fs';
 import * as cron from 'node-cron';
 

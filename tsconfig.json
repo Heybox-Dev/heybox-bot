@@ -6,6 +6,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "downlevelIteration": true,
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "declarationDir": "dist",
+    "rootDir": "src",
     "baseUrl": "./",
     "paths": {
       "@/*": [
@@ -17,6 +23,8 @@
     "src/**/*.ts"
   ],
   "exclude": [
+    "node_modules",
+    "dist",
     "src/**/*.d.ts",
     "src/**/*.js"
   ]

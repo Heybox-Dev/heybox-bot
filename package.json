@@ -1,12 +1,16 @@
 {
   "name": "heybox-bot",
   "version": "1.2.0",
-  "description": "",
+  "description": "A heybox chat bot frame",
+  "files": [
+    "dist"
+  ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
     "dev": "pnpx nodemon exec babel-node",
-    "build": "tsc --declaration"
+    "build": "tsc && tsc-alias",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "heybox",
@@ -15,12 +19,11 @@
     "frame"
   ],
   "bin": {
-    "heybox": "src/bin/index.js"
+    "heybox": "dist/bin/index.js"
   },
   "author": "Gugle",
   "license": "LGPL-3.0-or-later",
   "dependencies": {
-    "@types/node-cron": "^3.0.11",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
     "deasync": "^0.1.30",
@@ -29,7 +32,6 @@
     "logform": "^2.7.0",
     "mime-types": "^3.0.1",
     "node-cron": "^3.0.3",
-    "tsx": "^4.20.3",
     "winston": "^3.17.0",
     "ws": "^8.18.1"
   },
@@ -37,14 +39,17 @@
     "@eslint/js": "^9.24.0",
     "@types/deasync": "^0.1.5",
     "@types/mime-types": "^3.0.1",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemon": "^1.19.6",
     "@types/ws": "^8.18.1",
     "eslint": "^9.24.0",
+    "tsc-alias": "^1.8.16",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.6",
     "globals": "^15.15.0",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.1"
   }

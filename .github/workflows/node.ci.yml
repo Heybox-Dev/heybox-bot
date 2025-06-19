@@ -7,7 +7,6 @@ on:
     paths:
       - .github/**
       - src/**
-      - .babelrc
       - .env.dev
       - .env.prod
       - nodemon.json
