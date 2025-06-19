@@ -877,9 +877,8 @@ export class CardMessageImpl extends AbstractMessageImpl implements CardMessage 
    * 创建卡片消息实例
    * @returns 返回卡片消息实例
    */
-  public static create(): CardMessageImpl & Promise<CardMessageImpl> {
-    const impl = new CardMessageImpl();
-    return Object.assign(impl, Promise.resolve(impl));
+  public static create(): CardMessageImpl {
+    return new CardMessageImpl();
   }
 
   /**
@@ -1052,9 +1051,9 @@ export class MessageBuilder {
 
   /**
    * 创建一个卡片消息对象
-   * @returns {CardMessageImpl & Promise<CardMessageImpl>} 返回一个实现了卡片消息接口的对象
+   * @returns {CardMessageImpl} 返回一个实现了卡片消息接口的对象
    */
-  public card(): CardMessageImpl & Promise<CardMessageImpl> {
+  public card(): CardMessageImpl {
     return (this.message = CardMessageImpl.create());
   }
 

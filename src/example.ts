@@ -33,7 +33,12 @@ new (class MyBot {
         calc = (a, b) => a * b;
         break;
       case '/':
-        calc = (a, b) => a / b;
+        calc = (a, b) => {
+          if (b === 0) {
+            throw new Error('除数不能为零');
+          }
+          return a / b;
+        };
         break;
       case '^':
         calc = (a, b) => Math.pow(a, b);
@@ -43,7 +48,11 @@ new (class MyBot {
         break;
     }
     // 执行计算并返回结果
-    source.success(`${arg0} ${arg1} ${arg2 || arg0} = ${calc(arg0, arg2 || arg0)}`);
+    try {
+      source.success(`${arg0} ${arg1} ${arg2 || arg0} = ${calc(arg0, arg2 === undefined ? arg0 : arg2)}`);
+    } catch (e: any) {
+      source.fail(`计算出错，${e?.message || '未知错误'}`);
+    }
     return true;
   }
 
