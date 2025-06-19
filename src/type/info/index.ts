@@ -48,12 +48,34 @@ export declare type RoomBaseInfo = {
 };
 
 /**
+ * 定义命令选项文件的类型，包括文件的名称、URL、大小、类型和ID
+ */
+export declare type CommandOptionFile = {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  id: string;
+  option_index: number;
+};
+
+/**
+ * 定义命令选项图片的类型，继承自命令选项文件类型，并增加宽度和高度属性
+ */
+export declare type CommandOptionImage = CommandOptionFile & {
+  width: number;
+  height: number;
+};
+
+/**
  * 定义命令选项的类型，包括选项的名称、类型和值
  */
 export declare type CommandOption = {
   name: string;
   type: number;
   value: string;
+  image?: CommandOptionImage;
+  file?: CommandOptionFile;
 };
 
 /**
@@ -64,4 +86,31 @@ export declare type CommandInfo = {
   name: string;
   options: CommandOption[];
   type: number;
+  images: CommandOptionImage[];
+  files: CommandOptionFile[];
+};
+
+/**
+ * 定义命令用户的类型，目前仅包括用户的ID
+ */
+export declare type CommandUser = {
+  id: number;
+};
+
+/**
+ * 定义命令文件的类型，包括文件的名称、URL、大小和类型
+ */
+export declare type CommandFile = {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+};
+
+/**
+ * 定义命令图片的类型，继承自命令文件类型，并增加宽度和高度属性
+ */
+export declare type CommandImage = CommandFile & {
+  width: number;
+  height: number;
 };

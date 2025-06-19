@@ -1,4 +1,5 @@
-import { CommandWSMsgData, ILogger, Message } from '@/type';
+import { CommandOption, CommandWSMsgData, ILogger, Message } from '@/type';
+import { CommandFile, CommandImage, CommandOptionFile, CommandOptionImage, CommandUser } from '@/type/info';
 import { MessageBuilder } from '@/type/message';
 
 /**
@@ -34,11 +35,14 @@ class HeyBoxCommandArgument<T> {
    * 此函数主要用于类型转换，它假设传入的字符串可以安全地被视为类型T
    * 如果类型转换失败，函数将返回undefined
    *
-   * @param value 待解析的字符串值
+   * @param _value 待解析的字符串值
+   * @param _file 可选的File对象，用于提供额外的信息或上下文
+   * @param _image 可选的Image对象，用于提供额外的信息或上下文
+   * @template T 表示要解析为的类型
    * @returns 返回解析后的值，如果解析失败则返回undefined
    */
-  public parse(value: string): T | undefined {
-    return value as T;
+  public parse(_value: string, _file?: CommandOptionFile, _image?: CommandOptionImage): T | undefined {
+    return _value as T;
   }
 
   /**
@@ -70,6 +74,10 @@ class HeyBoxCommandArgument<T> {
           return new HeyBoxCommandBooleanArgument(name, name, required);
         case 'USER':
           return new HeyBoxCommandUserArgument(name, name, required);
+        case 'IMAGE':
+          return new HeyBoxCommandImageArgument(name, name, required);
+        case 'FILE':
+          return new HeyBoxCommandFileArgument(name, name, required);
         default: {
           if (type.includes('|')) {
             const options = nodes[1].split('|');
@@ -79,7 +87,9 @@ class HeyBoxCommandArgument<T> {
       }
     }
     // 如果参数格式不支持，抛出错误
-    throw new Error(`Not implemented, argument: ${argument}`);
+    throw new Error(
+      `Not implemented, argument: ${argument}, can only be STRING | NUMBER | BOOLEAN | USER | IMAGE | FILE and options`
+    );
   }
 }
 
@@ -151,15 +161,90 @@ class HeyBoxCommandBooleanArgument extends HeyBoxCommandArgument<boolean> {
 /**
  * 定义一个用户类型的命令参数类，继承自HeyBoxCommandArgument
  */
-class HeyBoxCommandUserArgument extends HeyBoxCommandArgument<null> {
+class HeyBoxCommandUserArgument extends HeyBoxCommandArgument<CommandUser> {
   public constructor(name: string, description: string, required: boolean) {
     super(name, 6, description, required);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public override parse(_value: string): null | undefined {
-    // 重写解析方法，对于用户类型参数，暂时不进行解析
-    return undefined;
+  public override parse(_value: string): CommandUser | undefined {
+    // 重写解析方法
+    return {
+      id: Number.parseInt(_value)
+    };
+  }
+}
+
+/**
+ * 图像参数类，用于处理命令中的图像类型参数
+ */
+class HeyBoxCommandImageArgument extends HeyBoxCommandArgument<CommandImage> {
+  /**
+   * 构造函数
+   * @param name 参数名称
+   * @param description 参数描述
+   * @param required 参数是否必选
+   */
+  public constructor(name: string, description: string, required: boolean) {
+    super(name, 11, description, required);
+  }
+
+  /**
+   * 解析图像参数
+   * @param _value 输入值
+   * @param _file 文件对象（未使用）
+   * @param _image 图像对象
+   * @returns 返回解析后的图像对象，如果图像对象不存在则返回undefined
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public override parse(
+    _value: string,
+    _file?: CommandOptionFile,
+    _image?: CommandOptionImage
+  ): CommandImage | undefined {
+    return _image
+      ? {
+          name: _image.name,
+          size: _image.size,
+          type: _image.type,
+          url: _image.url,
+          width: _image.width,
+          height: _image.height
+        }
+      : undefined;
+  }
+}
+
+/**
+ * 文件参数类，用于处理命令中的文件类型参数
+ */
+class HeyBoxCommandFileArgument extends HeyBoxCommandArgument<CommandFile> {
+  /**
+   * 构造函数
+   * @param name 参数名称
+   * @param description 参数描述
+   * @param required 参数是否必选
+   */
+  public constructor(name: string, description: string, required: boolean) {
+    super(name, 12, description, required);
+  }
+
+  /**
+   * 解析文件参数
+   * @param _value 输入值
+   * @param _file 文件对象
+   * @returns 返回解析后的文件对象，如果文件对象不存在则返回undefined
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public override parse(_value: string, _file?: CommandOptionFile): CommandFile | undefined {
+    return _file
+      ? {
+          name: _file.name,
+          size: _file.size,
+          type: _file.type,
+          url: _file.url
+        }
+      : undefined;
   }
 }
 
@@ -184,16 +269,28 @@ class HeyBoxCommand {
 /**
  * 定义一个命令管理器类，用于注册和执行命令
  */
+/**
+ * HeyBoxCommandManager 类负责管理命令的注册和执行
+ */
 export class HeyBoxCommandManager {
+  // 存储已注册的命令，使用 Map 数据结构以便快速查找
   public readonly commands: Map<string, HeyBoxCommand> = new Map<string, HeyBoxCommand>();
+  // 日志记录器，用于记录错误信息
   public readonly logger: ILogger;
 
+  /**
+   * 构造函数
+   * @param logger 日志记录器，用于记录错误信息
+   */
   public constructor(logger: ILogger) {
     this.logger = logger;
   }
 
+  /**
+   * 注册命令的方法，如果命令已存在则记录错误
+   * @param command 要注册的命令对象
+   */
   public register(command: HeyBoxCommand): void {
-    // 注册命令的方法，如果命令已存在则记录错误
     if (this.commands.has(command.name)) {
       this.logger.error(`Command ${command.name} is already registered!`);
       return;
@@ -201,20 +298,34 @@ export class HeyBoxCommandManager {
     this.commands.set(command.name, command);
   }
 
+  /**
+   * 执行命令的方法，根据命令名称和参数执行相应的逻辑
+   * @param command 命令消息数据，包含命令信息和参数
+   * @param prefixArgs 额外的参数，传递给命令的执行器
+   */
   public execute(command: CommandWSMsgData, ...prefixArgs: any): void {
-    // 执行命令的方法，根据命令名称和参数执行相应的逻辑
-    const commandName = command.command_info.name;
+    const commandName: string = command.command_info.name;
     if (this.commands.has(commandName)) {
-      const commandInfo = this.commands.get(commandName)!;
-      let argOptions = command.command_info.options;
+      const commandInfo: HeyBoxCommand = this.commands.get(commandName)!;
+      let argOptions: CommandOption[] = command.command_info.options;
+      let optionFiles: CommandOptionFile[] = command.command_info.files;
+      let optionImages: CommandOptionImage[] = command.command_info.images;
+      // 将文件和图片信息关联到对应的参数上
+      for (let i: number = argOptions.length - 1; i >= 0; i--) {
+        const files: CommandOptionFile | undefined = optionFiles?.filter(file => file.option_index === i)[0];
+        const images: CommandOptionImage | undefined = optionImages?.filter(image => image.option_index === i)[0];
+        argOptions[i].file = files;
+        argOptions[i].image = images;
+      }
       const args: any = [];
+      // 解析并验证命令参数，如果参数无效则记录错误
       for (const argument of commandInfo.arguments) {
         let arg: any = undefined;
         for (let i = 0; i < argOptions.length; i++) {
           const argOption = argOptions[i];
           if (argument.name === argOption.name) {
             argOptions = argOptions.filter(option => option.name !== argOption.name);
-            arg = argument.parse(argOption.value);
+            arg = argument.parse(argOption.value, argOption.file, argOption.image);
             if (arg === undefined) {
               this.logger.error(`Argument ${argOption.name} is not valid in command ${commandName}`);
               return;
@@ -224,15 +335,21 @@ export class HeyBoxCommandManager {
         }
         args.push(arg);
       }
+      // 调用命令的执行器函数，并传入相应的参数
       commandInfo.executor(...prefixArgs, ...args);
     }
   }
 
+  /**
+   * 解析命令字符串的方法，用于将命令字符串转换为命令对象并注册
+   * @param command 命令字符串
+   * @param permission 命令的权限级别，可选参数
+   * @returns 返回一个函数，该函数接受命令的执行器作为参数
+   */
   public parse(
     command: string,
     permission: string | undefined = undefined
   ): (executor: (...args: any) => boolean) => void {
-    // 解析命令字符串的方法，用于将命令字符串转换为命令对象并注册
     if (!command.startsWith('/')) throw new Error('Invalid command');
     const register = (command: HeyBoxCommand) => this.register(command);
     return function (executor: (...args: any) => boolean) {
