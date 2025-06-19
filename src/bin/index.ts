@@ -9,8 +9,8 @@ const initPackageJson = {
   name: 'bot-name',
   version: '1.0.0',
   description: '',
-  main: 'src/define.js',
-  types: 'src/define.d.ts',
+  main: 'src/index.js',
+  types: 'src/index.d.ts',
   scripts: {
     dev: 'pnpx nodemon exec babel-node',
     build: 'tsc --declaration'
@@ -18,7 +18,7 @@ const initPackageJson = {
   author: 'author',
   license: 'LGPL-3.0-or-later',
   dependencies: {
-    'heybox-bot': '^1.2.39'
+    'heybox-bot': '^1.2.41'
   },
   devDependencies: {
     '@eslint/js': '^9.24.0',
@@ -48,9 +48,6 @@ const initTsConfigJson = {
   },
   include: ['src/**/*.ts'],
   exclude: ['src/**/*.d.ts', 'src/**/*.js']
-};
-const initBabelRc = {
-  plugins: ['@babel/plugin-proposal-decorators']
 };
 const initPrettierrcJs =
   '//此处的规则供参考，其中多半其实都是默认值，可以根据个人习惯改写\n' +
@@ -115,7 +112,7 @@ const initNodemonJson = {
 
 const initIndexTs =
   "import { HeyBoxBot } from 'heybox-bot';\n" +
-  "import { CommandSource } from 'gugle-command';\n" +
+  "import { CommandSource } from 'heybox-bot/src/command';\n" +
   "import { RawData } from 'ws';\n" +
   '\n' +
   "const bot: HeyBoxBot = new HeyBoxBot({ token:'your token' });\n" +
@@ -143,8 +140,6 @@ function init() {
   if (!fs.existsSync(packageJsonPath)) fs.writeFileSync(packageJsonPath, JSON.stringify(initPackageJson, null, 2));
   const tsconfigJsonPath = `${rootDirectory}/tsconfig.json`;
   if (!fs.existsSync(tsconfigJsonPath)) fs.writeFileSync(tsconfigJsonPath, JSON.stringify(initTsConfigJson, null, 2));
-  const babelRcPath = `${rootDirectory}/.babelrc`;
-  if (!fs.existsSync(babelRcPath)) fs.writeFileSync(babelRcPath, JSON.stringify(initBabelRc, null, 2));
   const prettierrcJs = `${rootDirectory}/.prettierrc.js`;
   if (!fs.existsSync(prettierrcJs)) fs.writeFileSync(prettierrcJs, initPrettierrcJs);
   const eslintConfigMjs = `${rootDirectory}/eslint.config.mjs`;
