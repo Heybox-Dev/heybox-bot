@@ -3,19 +3,20 @@ import { CommandSource } from '@/command';
 import {
   ChannelBaseInfo,
   CommandInfo,
+  CommandUserInfo,
   RoomBaseInfo,
-  UserBaseInfo,
-  UserInfo,
   SimpleUserInfo,
-  CommandUserInfo
+  UserBaseInfo,
+  UserInfo
 } from '@/type/info';
 import {
-  Message,
-  UserMessage,
-  UserMessageBuilder,
   ExtendedMarkdownMessageImpl,
+  ImgFilesInfo,
   MarkdownUserMessageImpl,
-  MessageBuilder
+  Message,
+  MessageBuilder,
+  UserMessage,
+  UserMessageBuilder
 } from '@/type/message';
 
 // 定义WebSocket消息数据的基类型
@@ -61,6 +62,24 @@ export declare type CardMessageBtnClickWSMsgData = {
   value: string;
 };
 
+// 定义用户消息的WebSocket消息数据类型
+export declare type UserImMessageWSMsgData = WSMsgData & {
+  user_info: UserInfo;
+  user_id: string;
+  roles: string[];
+  nickname: string;
+  room_id: string;
+  channel_id: string;
+  channel_name: string;
+  channel_type: number;
+  msg: string;
+  msg_type: number;
+  img: string;
+  img_info: ImgFilesInfo;
+  avatar: string;
+  addition: string;
+};
+
 // 定义WebSocket消息的基类型
 export declare type WebSocketWSMsg = {
   sequence: number;
@@ -88,6 +107,11 @@ export declare type UserAddOrRemoveEmojiToMsgWSMsg = WebSocketWSMsg & {
 // 定义卡片消息按钮点击的WebSocket消息类型
 export declare type CardMessageBtnClickWSMsg = WebSocketWSMsg & {
   data: CardMessageBtnClickWSMsgData;
+};
+
+// 定义用户消息的WebSocket消息类型
+export declare type UserImMessageWSMsg = WebSocketWSMsg & {
+  data: UserImMessageWSMsgData;
 };
 
 /**

@@ -248,6 +248,8 @@ class HeyBoxCommandFileArgument extends HeyBoxCommandArgument<CommandFile> {
   }
 }
 
+export type CommandResult = boolean | Promise<boolean>;
+
 /**
  * 定义一个命令类，用于管理命令的执行和相关信息
  */
@@ -256,9 +258,14 @@ class HeyBoxCommand {
   public readonly description: string;
   public readonly permission?: string;
   public readonly arguments: HeyBoxCommandArgument<any>[] = [];
-  public readonly executor: (...args: any) => boolean;
+  public readonly executor: (...args: any) => CommandResult;
 
-  public constructor(name: string, description: string, executor: (...args: any) => boolean, permission?: string) {
+  public constructor(
+    name: string,
+    description: string,
+    executor: (...args: any) => CommandResult,
+    permission?: string
+  ) {
     this.name = name;
     this.description = description;
     this.permission = permission;
@@ -353,10 +360,10 @@ export class HeyBoxCommandManager {
   public parse(
     command: string,
     permission: string | undefined = undefined
-  ): (executor: (...args: any) => boolean) => void {
+  ): (executor: (...args: any) => CommandResult) => void {
     if (!command.startsWith('/')) throw new Error('Invalid command');
     const register = (command: HeyBoxCommand) => this.register(command);
-    return function (executor: (...args: any) => boolean) {
+    return function (executor: (...args: any) => CommandResult) {
       const commands = command.split(/(?<!:)\s/);
       const heyBoxCommand = new HeyBoxCommand(commands[0], commands[0], executor, permission);
       for (let i = 1; i < commands.length; i++) {

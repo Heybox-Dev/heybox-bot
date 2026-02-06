@@ -234,6 +234,146 @@ export class Request {
     deasync.loopWhile(() => !done);
     return cdnUrl;
   }
+
+  /**
+   * 更新频道消息
+   * @param payload 更新消息的负载
+   */
+  public static async updateMessage(payload: {
+    msg_id: string;
+    msg: string;
+    msg_type: number;
+    heychat_ack_id: string;
+    reply_id?: string;
+    room_id: string;
+    addition: string;
+    at_user_id?: string;
+    at_role_id?: string;
+    mention_channel_id?: string;
+    channel_id: string;
+  }) {
+    const url = `/chatroom/v2/channel_msg/update${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`update message: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
+
+  /**
+   * 删除频道消息
+   * @param payload 删除消息的负载
+   */
+  public static async deleteMessage(payload: {
+    msg_id: string;
+    room_id: string;
+    channel_id: string;
+  }) {
+    const url = `/chatroom/v2/channel_msg/delete${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`delete message: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
+
+  /**
+   * 获取房间信息
+   * @param roomId 房间ID
+   */
+  public static async getRoomInfo(roomId: string) {
+    const url = `/chatroom/v2/room/view${Constants.COMMON_PARAMS}&room_id=${roomId}`;
+    Util.log.debug(`get room info: ${roomId}`);
+    return Request.getInstance().get(url);
+  }
+
+  /**
+   * 分页获取加入的房间列表
+   * @param offset 偏移量
+   * @param limit 限制数量
+   */
+  public static async getJoinedRooms(offset: number = 0, limit: number = 20) {
+    const url = `/chatroom/v2/room/joined${Constants.COMMON_PARAMS}&offset=${offset}&limit=${limit}`;
+    Util.log.debug(`get joined rooms: offset=${offset}, limit=${limit}`);
+    return Request.getInstance().get(url);
+  }
+
+  /**
+   * 获取房间用户列表
+   * @param roomId 房间ID
+   * @param userId 用户ID
+   * @param offset 偏移量
+   * @param limit 限制数量
+   */
+  public static async getRoomUsers(roomId: string, userId: string, offset: number = 0, limit: number = 50) {
+    const url = `/chatroom/v2/room/users?heybox_id=${userId}&offset=${offset}&limit=${limit}&room_id=${roomId}`;
+    Util.log.debug(`get room users: room_id=${roomId}, user_id=${userId}`);
+    return Request.getInstance().get(url);
+  }
+
+  /**
+   * 给消息添加/取消回应(小表情)
+   * @param payload 回应消息的负载
+   */
+  public static async emojiReply(payload: {
+    msg_id: string;
+    room_id: string;
+    channel_id: string;
+    emoji: string;
+    is_add: boolean;
+  }) {
+    const url = `/chatroom/v2/channel_msg/emoji/reply${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`emoji reply: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
+
+  /**
+   * 修改房间内昵称
+   * @param payload 修改昵称的负载
+   */
+  public static async changeRoomNickname(payload: {
+    room_id: string;
+    nickname: string;
+  }) {
+    const url = `/chatroom/v2/room/nickname${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`change room nickname: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
+
+  /**
+   * 退出房间
+   * @param roomId 房间ID
+   */
+  public static async leaveRoom(roomId: string) {
+    const url = `/chatroom/v2/room/leave${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`leave room: ${roomId}`);
+    return Request.getInstance().post(url, { room_id: roomId });
+  }
+
+  /**
+   * 房间踢人
+   * @param payload 踢人操作的负载
+   */
+  public static async kickOutUser(payload: {
+    room_id: string;
+    user_id: number;
+    delete_msg_range?: number;
+    reason?: string;
+  }) {
+    const url = `/chatroom/v2/room/kick_out${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`kick out user: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
+
+  /**
+   * 禁言/解禁用户
+   * @param payload 禁言操作的负载
+   */
+  public static async banUser(payload: {
+    room_id: string;
+    user_id: number;
+    duration?: number;
+    reason?: string;
+    notify?: boolean;
+  }) {
+    const url = `/chatroom/v2/room/ban${Constants.COMMON_PARAMS}`;
+    Util.log.debug(`ban user: ${JSON.stringify(payload)}`);
+    return Request.getInstance().post(url, payload);
+  }
 }
 
 /**

@@ -142,6 +142,199 @@ new (class MyBot {
     source.success(JSON.stringify(file));
     return true;
   }
+
+  /**
+   * 获取房间信息命令处理器
+   *
+   * 当用户发送 "/roominfo {房间ID}" 命令时，此方法会获取并显示房间的详细信息
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @param roomId 房间ID
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/roominfo {roomId: STRING}')
+  public async getRoomInfo(source: CommandSource, roomId: string): Promise<boolean> {
+    try {
+      const response = await bot.getRoomInfo(roomId);
+      if (response.data.status === 'ok') {
+        const room = response.data.result.room;
+        source.successBy(builder => {
+          builder
+            .card()
+            .header('房间信息')
+            .divider()
+            .text(`房间名称: ${room.room_name}`)
+            .text(`房间ID: ${room.room_id}`)
+            .text(`成员数量: ${room.member_count}`)
+            .text(`在线人数: ${room.online_count}`)
+            .text(`简介: ${room.introduction || '无'}`);
+        });
+      } else {
+        source.fail(`获取房间信息失败: ${response.data.msg}`);
+      }
+    } catch (error: any) {
+      source.fail(`获取房间信息出错: ${error.message}`);
+    }
+    return true;
+  }
+
+  /**
+   * 获取我的房间列表命令处理器
+   *
+   * 当用户发送 "/myrooms" 命令时，此方法会列出机器人加入的所有房间
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/myrooms')
+  public async getMyRooms(source: CommandSource): Promise<boolean> {
+    try {
+      const response = await bot.getJoinedRooms(0, 10);
+      if (response.data.status === 'ok') {
+        const rooms = response.data.result.rooms;
+        if (rooms && rooms.length > 0) {
+          source.successBy(builder => {
+            builder.card().header('我的房间列表').divider();
+            rooms.forEach((room: any, index: number) => {
+              builder.text(`${index + 1}. ${room.room_name} (${room.room_id})`);
+            });
+          });
+        } else {
+          source.success('暂无加入的房间');
+        }
+      } else {
+        source.fail(`获取房间列表失败: ${response.data.msg}`);
+      }
+    } catch (error: any) {
+      source.fail(`获取房间列表出错: ${error.message}`);
+    }
+    return true;
+  }
+
+  /**
+   * 获取房间用户列表命令处理器
+   *
+   * 当用户发送 "/roomusers {房间ID}" 命令时，此方法会显示房间内的用户列表
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @param roomId 房间ID
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/roomusers {roomId: STRING}')
+  public async getRoomUsers(source: CommandSource, roomId: string): Promise<boolean> {
+    try {
+      // 这里需要获取机器人的用户ID，暂时使用示例ID
+      const botUserId = '84005510'; // 实际使用时应该从机器人配置中获取
+      const response = await bot.getRoomUsers(roomId, botUserId, 0, 20);
+      if (response.data.status === 'ok') {
+        const userInfo = response.data.result.room_info;
+        source.successBy(builder => {
+          builder
+            .card()
+            .header(`房间用户列表 (${userInfo.user_count}人)`)
+            .divider();
+          
+          if (userInfo.user_info && userInfo.user_info.length > 0) {
+            userInfo.user_info.slice(0, 10).forEach((user: any) => {
+              builder.text(`• ${user.nickname} (${user.username})`);
+            });
+            if (userInfo.user_info.length > 10) {
+              builder.text(`...还有${userInfo.user_info.length - 10}人`);
+            }
+          } else {
+            builder.text('房间内暂无用户');
+          }
+        });
+      } else {
+        source.fail(`获取用户列表失败: ${response.data.msg}`);
+      }
+    } catch (error: any) {
+      source.fail(`获取用户列表出错: ${error.message}`);
+    }
+    return true;
+  }
+
+  /**
+   * 修改房间昵称命令处理器
+   *
+   * 当用户发送 "/setnick {房间ID} {昵称}" 命令时，此方法会修改机器人在该房间的昵称
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @param roomId 房间ID
+   * @param nickname 新昵称
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/setnick {roomId: STRING} {nickname: STRING}')
+  public async setRoomNickname(source: CommandSource, roomId: string, nickname: string): Promise<boolean> {
+    try {
+      const response = await bot.changeRoomNickname(roomId, nickname);
+      if (response.data.status === 'ok') {
+        source.success(`房间昵称已修改为: ${nickname}`);
+      } else {
+        source.fail(`修改昵称失败: ${response.data.msg}`);
+      }
+    } catch (error: any) {
+      source.fail(`修改昵称出错: ${error.message}`);
+    }
+    return true;
+  }
+
+  /**
+   * 更新最后一条消息命令处理器
+   *
+   * 当用户发送 "/updatemsg {新内容}" 命令时，此方法会更新机器人发送的最后一条消息
+   * 注意：这需要先保存消息ID才能使用
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @param newContent 新的消息内容
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/updatemsg {newContent: STRING}')
+  public async updateLastMessage(source: CommandSource, newContent: string): Promise<boolean> {
+    // 这是一个示例，实际使用时需要保存消息ID
+    // const lastMsgId = '1845715947309797376'; // 示例消息ID
+    // const roomId = '3690041195409809408'; // 示例房间ID
+    // const channelId = '3690041195638218754'; // 示例频道ID
+    
+    source.fail('此功能需要先保存消息ID才能使用，请参考文档实现');
+    return true;
+  }
+
+  /**
+   * 给消息添加表情回应命令处理器
+   *
+   * 当用户发送 "/emoji {消息ID} {表情符号}" 命令时，此方法会给指定消息添加表情
+   *
+   * @param source 命令的来源，用于发送反馈信息
+   * @param msgId 消息ID
+   * @param emoji 表情符号
+   * @returns 总是返回true，表示命令处理成功
+   */
+  @bot.command('/emoji {msgId: STRING} {emoji: STRING}')
+  public async addEmoji(source: CommandSource, msgId: string, emoji: string): Promise<boolean> {
+    if (source instanceof WSMsgImpl) {
+      const wsMsgImpl = source as WSMsgImpl;
+      try {
+        const response = await bot.emojiReply(
+          msgId,
+          wsMsgImpl.room_id,
+          wsMsgImpl.channel_id,
+          emoji,
+          true
+        );
+        if (response.data.status === 'ok') {
+          source.success(`已添加表情: ${emoji}`);
+        } else {
+          source.fail(`添加表情失败: ${response.data.msg}`);
+        }
+      } catch (error: any) {
+        source.fail(`添加表情出错: ${error.message}`);
+      }
+    } else {
+      source.fail('此命令只能在频道中使用');
+    }
+    return true;
+  }
 })();
 
 // 启动Bot实例

@@ -3,7 +3,7 @@ import { RawData, WebSocket } from 'ws';
 import * as process from 'node:process';
 import BotConfig from '@/config';
 import Constants from '@/constants';
-import { HeyBoxCommandManager } from '@/command';
+import { CommandResult, HeyBoxCommandManager } from '@/command';
 import { Logger } from 'winston';
 import dayjs from 'dayjs';
 import {
@@ -13,20 +13,21 @@ import {
   CommandWSMsgData,
   EventCallback,
   Message,
+  MessageBuilder,
   SimpleUserInfo,
   UserAddOrRemoveEmojiToMsgWSMsgData,
   UserBaseInfo,
   UserJoinOrLeaveRoomWSMsgData,
-  WebSocketWSMsg,
-  MessageBuilder,
   UserMessage,
   UserMessageBuilder,
+  WebSocketWSMsg,
   WSMsgImpl
 } from '@/type';
-import { HeyboxBotRuntimeContext, Request } from '@/utils';
+import { HeyboxBotRuntimeContext, Request, Util } from '@/utils';
 import { LoggerFactory } from '@/logger';
 import * as fs from 'node:fs';
 import * as cron from 'node-cron';
+import { UserImMessageWSMsgData } from '@/type/websocket';
 
 /**
  * `HeyBoxBot` 类代表一个聊天机器人，用于处理命令和事件
@@ -152,6 +153,7 @@ export class HeyBoxBot {
       this.eventManager.listen('user-add-or-remove-emoji-to-msg', this.onUserAddOrRemoveEmojiToMsg);
       this.eventManager.listen('user-join-or-leave-room', this.onUserJoinOrLeaveRoom);
       this.eventManager.listen('card-message-btn-click', this.onCardMessageBtnClick);
+      this.eventManager.listen('user-im-msg', this.onUserImMsg);
       // 设置WebSocket消息监听器
       this.ws.on('message', event => {
         // 当接收到WebSocket消息时，触发'websocket-message'事件
@@ -199,11 +201,11 @@ export class HeyBoxBot {
   public command(
     command: string,
     permission: string | undefined = undefined
-  ): (executor: (...args: any) => boolean) => void {
+  ): (executor: (...args: any) => CommandResult) => void {
     // 当前命令管理器实例的别名，用于内部函数中引用
     const commandManager = this.commandManager;
     // 返回一个函数，该函数接受一个执行器函数作为参数，并在适当的时候调用它
-    return function (executor: (...args: any) => boolean) {
+    return function (executor: (...args: any) => CommandResult) {
       // 调用命令管理器的解析方法，根据传入的命令字符串和权限字符串来解析并执行命令
       commandManager?.parse(command, permission)(executor);
     };
@@ -303,6 +305,9 @@ export class HeyBoxBot {
           const cardMessageBtnClickWSMsgData: CardMessageBtnClickWSMsgData = data.data as CardMessageBtnClickWSMsgData;
           const user: UserBaseInfo = cardMessageBtnClickWSMsgData.sender_info;
           bot.post('card-message-btn-click', bot, user, cardMessageBtnClickWSMsgData).then();
+        } else if (data.type === '5') {
+          const userImMsg: UserImMessageWSMsgData = data.data as UserImMessageWSMsgData;
+          bot.post('user-im-msg', bot, userImMsg).then();
         }
       } catch (e) {
         // 如果解析过程中出现错误，记录错误信息
@@ -370,6 +375,16 @@ export class HeyBoxBot {
   }
 
   /**
+   * 当用户发送消息时调用该方法处理
+   * @param bot 当前机器人实例
+   * @param msg 用户发送的私聊消息数据
+   */
+  private onUserImMsg(bot: HeyBoxBot, msg: UserImMessageWSMsgData) {
+    // 记录用户发送消息的日志
+    bot.logger!.info(`[${msg.nickname}|${msg.user_id}] ${msg.msg}`);
+  }
+
+  /**
    * 通过回调函数构建并发送消息
    * @param callback 用于构建消息的回调函数
    */
@@ -415,5 +430,170 @@ export class HeyBoxBot {
    */
   public getConfig(): BotConfig {
     return this.config;
+  }
+
+  // ==================== 房间管理相关方法 ====================
+
+  /**
+   * 获取房间信息
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async getRoomInfo(roomId: string): Promise<any> {
+    return Request.getRoomInfo(roomId);
+  }
+
+  /**
+   * 获取加入的房间列表
+   * @param offset 偏移量，默认0
+   * @param limit 限制数量，默认20
+   * @returns Promise<any>
+   */
+  public async getJoinedRooms(offset: number = 0, limit: number = 20): Promise<any> {
+    return Request.getJoinedRooms(offset, limit);
+  }
+
+  /**
+   * 获取房间用户列表
+   * @param roomId 房间ID
+   * @param userId 用户ID（通常是机器人自己的ID）
+   * @param offset 偏移量，默认0
+   * @param limit 限制数量，默认50
+   * @returns Promise<any>
+   */
+  public async getRoomUsers(roomId: string, userId: string, offset: number = 0, limit: number = 50): Promise<any> {
+    return Request.getRoomUsers(roomId, userId, offset, limit);
+  }
+
+  /**
+   * 修改房间内昵称
+   * @param roomId 房间ID
+   * @param nickname 新昵称
+   * @returns Promise<any>
+   */
+  public async changeRoomNickname(roomId: string, nickname: string): Promise<any> {
+    return Request.changeRoomNickname({ room_id: roomId, nickname });
+  }
+
+  /**
+   * 退出房间
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async leaveRoom(roomId: string): Promise<any> {
+    return Request.leaveRoom(roomId);
+  }
+
+  /**
+   * 踢出用户
+   * @param roomId 房间ID
+   * @param userId 用户ID
+   * @param deleteMsgRange 删除消息范围（秒），可选
+   * @param reason 踢出原因，可选
+   * @returns Promise<any>
+   */
+  public async kickOutUser(roomId: string, userId: number, deleteMsgRange?: number, reason?: string): Promise<any> {
+    return Request.kickOutUser({
+      room_id: roomId,
+      user_id: userId,
+      delete_msg_range: deleteMsgRange,
+      reason
+    });
+  }
+
+  /**
+   * 禁言用户
+   * @param roomId 房间ID
+   * @param userId 用户ID
+   * @param duration 禁言时长（秒），0表示解禁
+   * @param reason 禁言原因，可选
+   * @param notify 是否通知用户，可选
+   * @returns Promise<any>
+   */
+  public async banUser(
+    roomId: string,
+    userId: number,
+    duration: number = 3600,
+    reason?: string,
+    notify: boolean = true
+  ): Promise<any> {
+    return Request.banUser({
+      room_id: roomId,
+      user_id: userId,
+      duration,
+      reason,
+      notify
+    });
+  }
+
+  // ==================== 消息操作相关方法 ====================
+
+  /**
+   * 更新消息
+   * @param msgId 消息ID
+   * @param content 新的消息内容
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @param msgType 消息类型，默认4（markdown）
+   * @param addition 附加信息，默认{}
+   * @returns Promise<any>
+   */
+  public async updateMessage(
+    msgId: string,
+    content: string,
+    roomId: string,
+    channelId: string,
+    msgType: number = 4,
+    addition: string = '{}'
+  ): Promise<any> {
+    return Request.updateMessage({
+      msg_id: msgId,
+      msg: content,
+      msg_type: msgType,
+      heychat_ack_id: Util.getAckId().toString(),
+      room_id: roomId,
+      addition,
+      channel_id: channelId
+    });
+  }
+
+  /**
+   * 删除消息
+   * @param msgId 消息ID
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @returns Promise<any>
+   */
+  public async deleteMessage(msgId: string, roomId: string, channelId: string): Promise<any> {
+    return Request.deleteMessage({
+      msg_id: msgId,
+      room_id: roomId,
+      channel_id: channelId
+    });
+  }
+
+  /**
+   * 给消息添加/取消表情回应
+   * @param msgId 消息ID
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @param emoji 表情符号
+   * @param isAdd 是否添加表情（true添加，false取消）
+   * @returns Promise<any>
+   */
+  public async emojiReply(
+    msgId: string,
+    roomId: string,
+    channelId: string,
+    emoji: string,
+    isAdd: boolean = true
+  ): Promise<any> {
+    return Request.emojiReply({
+      msg_id: msgId,
+      room_id: roomId,
+      channel_id: channelId,
+      emoji,
+      is_add: isAdd
+    });
   }
 }

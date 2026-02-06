@@ -1,9 +1,10 @@
 import { HeyBoxBot } from '@/index';
-import { UserBaseInfo, SimpleUserInfo } from '@/type/info';
+import { SimpleUserInfo, UserBaseInfo } from '@/type/info';
 import {
   CardMessageBtnClickWSMsgData,
   CommandWSMsgData,
   UserAddOrRemoveEmojiToMsgWSMsgData,
+  UserImMessageWSMsgData,
   UserJoinOrLeaveRoomWSMsgData
 } from '@/type/websocket';
 import { Cancelable } from 'gugle-event';
@@ -23,7 +24,8 @@ export declare type HeyBoxEvent =
   | 'command-message'
   | 'user-add-or-remove-emoji-to-msg'
   | 'user-join-or-leave-room'
-  | 'card-message-btn-click';
+  | 'card-message-btn-click'
+  | 'user-im-message';
 
 /**
  * 定义机器人的事件类型
@@ -75,9 +77,13 @@ export declare type HeyBoxEventCallback<
         ? C extends true
           ? (cancelable: Cancelable, bot: HeyBoxBot, user: UserBaseInfo, msg: CardMessageBtnClickWSMsgData) => void
           : (bot: HeyBoxBot, user: UserBaseInfo, msg: CardMessageBtnClickWSMsgData) => void
-        : C extends true
-          ? (cancelable: Cancelable, ...args: any) => void
-          : (...args: any) => void;
+        : T extends 'user-im-message'
+          ? C extends true
+            ? (cancelable: Cancelable, bot: HeyBoxBot, user: UserBaseInfo, msg: UserImMessageWSMsgData) => void
+            : (bot: HeyBoxBot, user: UserBaseInfo, msg: UserImMessageWSMsgData) => void
+          : C extends true
+            ? (cancelable: Cancelable, ...args: any) => void
+            : (...args: any) => void;
 
 /**
  * 定义通用事件回调函数类型
