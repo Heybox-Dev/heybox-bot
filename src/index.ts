@@ -526,6 +526,564 @@ export class HeyBoxBot {
     });
   }
 
+  // ==================== 角色权限管理相关方法 ====================
+
+  /**
+   * 获取房间角色列表
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async getRoomRoles(roomId: string): Promise<any> {
+    return Request.getRoomRoles(roomId);
+  }
+
+  /**
+   * 创建角色
+   * @param roomId 房间ID
+   * @param roleName 角色名称
+   * @param permissions 权限值
+   * @param color 颜色值
+   * @param hoist 是否在成员列表中置顶显示
+   * @param icon 角色图标URL（可选）
+   * @param colorList 渐变色数组（可选）
+   * @returns Promise<any>
+   */
+  public async createRole(
+    roomId: string,
+    roleName: string,
+    permissions: string,
+    color: number,
+    hoist: number = 0,
+    icon?: string,
+    colorList?: number[]
+  ): Promise<any> {
+    return Request.createRole({
+      name: roleName,
+      icon: icon || '',
+      color_list: colorList || [],
+      room_id: roomId,
+      permissions,
+      type: 0,
+      color,
+      hoist,
+      nonce: Date.now().toString()
+    });
+  }
+
+  /**
+   * 更新角色
+   * @param roleId 角色ID
+   * @param roomId 房间ID
+   * @param roleName 角色名称
+   * @param icon 角色图标
+   * @param colorList 渐变色数组
+   * @param permissions 权限值
+   * @param color 颜色值
+   * @param hoist 是否置顶
+   * @param position 角色位置
+   * @returns Promise<any>
+   */
+  public async updateRole(
+    roleId: string,
+    roomId: string,
+    roleName: string,
+    icon: string,
+    colorList: number[],
+    permissions: string,
+    color: number,
+    hoist: number,
+    position: number
+  ): Promise<any> {
+    return Request.updateRole({
+      id: roleId,
+      name: roleName,
+      icon,
+      color_list: colorList,
+      room_id: roomId,
+      permissions,
+      type: 0,
+      color,
+      hoist,
+      nonce: Date.now().toString(),
+      position
+    });
+  }
+
+  /**
+   * 删除角色
+   * @param roleId 角色ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async deleteRole(roleId: string, roomId: string): Promise<any> {
+    return Request.deleteRole({
+      role_id: roleId,
+      room_id: roomId
+    });
+  }
+
+  /**
+   * 授予用户角色
+   * @param userId 用户ID
+   * @param roleId 角色ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async grantRole(userId: number, roleId: string, roomId: string): Promise<any> {
+    return Request.grantRole({
+      to_user_id: userId,
+      role_id: roleId,
+      room_id: roomId
+    });
+  }
+
+  /**
+   * 剥夺用户角色
+   * @param userId 用户ID
+   * @param roleId 角色ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async revokeRole(userId: number, roleId: string, roomId: string): Promise<any> {
+    return Request.revokeRole({
+      to_user_id: userId,
+      role_id: roleId,
+      room_id: roomId
+    });
+  }
+
+  /**
+   * 更新角色或用户权限
+   * @param roomId 房间ID
+   * @param permissions 权限值
+   * @param roleId 角色ID（可选）
+   * @param userId 用户ID（可选）
+   * @returns Promise<any>
+   */
+  public async updateRolePermissions(
+    roomId: string,
+    permissions: string,
+    roleId?: string,
+    userId?: number
+  ): Promise<any> {
+    return Request.updateRolePermissions({
+      room_id: roomId,
+      role_id: roleId,
+      user_id: userId,
+      permissions
+    });
+  }
+
+  // ==================== 表情包管理相关方法 ====================
+
+  /**
+   * 获取房间表情包列表
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async getRoomEmojis(roomId: string): Promise<any> {
+    return Request.getRoomEmojis(roomId);
+  }
+
+  /**
+   * 删除房间表情包
+   * @param emojiPath 表情包路径
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async deleteRoomEmoji(emojiPath: string, roomId: string): Promise<any> {
+    return Request.deleteRoomEmoji({
+      path: emojiPath,
+      room_id: roomId
+    });
+  }
+
+  /**
+   * 更新房间表情包名称
+   * @param emojiPath 表情包路径
+   * @param newName 新名称
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async updateRoomEmojiName(emojiPath: string, newName: string, roomId: string): Promise<any> {
+    return Request.updateRoomEmojiName({
+      path: emojiPath,
+      name: newName,
+      room_id: roomId
+    });
+  }
+
+  // ==================== 频道管理相关方法 ====================
+
+  /**
+   * 移动用户到其他频道
+   * @param originChannelId 用户当前所在频道ID
+   * @param toUserIds 要移动的用户ID数组
+   * @param roomId 房间ID
+   * @param channelId 目标频道ID
+   * @returns Promise<any>
+   */
+  public async moveChannelMember(
+    originChannelId: string,
+    toUserIds: string[],
+    roomId: string,
+    channelId: string
+  ): Promise<any> {
+    return Request.moveChannelMember({
+      origin_channel_id: originChannelId,
+      to_user_ids: toUserIds,
+      room_id: roomId,
+      channel_id: channelId
+    });
+  }
+
+  /**
+   * 踢出语音频道中的用户
+   * @param toUserId 被踢出的用户ID
+   * @param heyboxId 操作者ID（可选）
+   * @param roomId 房间ID（可选）
+   * @param channelId 频道ID（可选）
+   * @returns Promise<any>
+   */
+  public async kickChannelUser(
+    toUserId: number,
+    heyboxId?: string,
+    roomId?: string,
+    channelId?: string
+  ): Promise<any> {
+    return Request.kickChannelUser({
+      to_user_id: toUserId,
+      heybox_id: heyboxId,
+      room_id: roomId,
+      channel_id: channelId
+    });
+  }
+
+  /**
+   * 频道内麦克风静音/解禁
+   * @param toUserId 用户ID
+   * @param channelId 频道ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async muteChannelUser(toUserId: number, channelId: string, roomId: string): Promise<any> {
+    return Request.muteChannelUser({
+      to_user_id: toUserId,
+      channel_id: channelId,
+      room_id: roomId
+    });
+  }
+
+  /**
+   * 获取用户所在频道
+   * @param toUserId 查询用户ID
+   * @param roomId 房间ID
+   * @param mustAudio 是否必须返回语音频道
+   * @returns Promise<any>
+   */
+  public async getUserChannel(toUserId: string, roomId: string, mustAudio: boolean = false): Promise<any> {
+    return Request.getUserChannel(toUserId, roomId, mustAudio);
+  }
+
+  /**
+   * 获取频道在线成员列表
+   * @param channelId 频道ID
+   * @param roomId 房间ID
+   * @param heyboxId 用户ID
+   * @returns Promise<any>
+   */
+  public async getChannelOnlineUsers(channelId: string, roomId: string, heyboxId: string): Promise<any> {
+    return Request.getChannelOnlineUsers(channelId, roomId, heyboxId);
+  }
+
+  /**
+   * 修改频道设置
+   * @param channelId 频道ID
+   * @param roomId 房间ID
+   * @param setting 设置项
+   * @param value 设置值
+   * @param channelType 频道类型
+   * @returns Promise<any>
+   */
+  public async editChannelSetting(
+    channelId: string,
+    roomId: string,
+    setting: string,
+    value: number,
+    channelType: number
+  ): Promise<any> {
+    return Request.editChannelSetting({
+      channel_id: channelId,
+      room_id: roomId,
+      setting,
+      value,
+      channel_type: channelType
+    });
+  }
+
+  /**
+   * 编辑频道名称
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @param channelName 新频道名
+   * @param channelType 频道类型
+   * @returns Promise<any>
+   */
+  public async editChannelName(
+    roomId: string,
+    channelId: string,
+    channelName: string,
+    channelType: number
+  ): Promise<any> {
+    return Request.editChannelName({
+      room_id: roomId,
+      channel_id: channelId,
+      channel_name: channelName,
+      channel_type: channelType
+    });
+  }
+
+  /**
+   * 设置频道密码
+   * @param password 频道密码
+   * @param channelId 频道ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async setChannelPassword(password: string, channelId: string, roomId: string): Promise<any> {
+    return Request.setChannelPassword(password, channelId, roomId);
+  }
+
+  /**
+   * 获取用户频道权限
+   * @param channelId 频道ID
+   * @param toUserId 用户ID
+   * @param parentId 频道组ID（可选）
+   * @returns Promise<any>
+   */
+  public async getUserChannelPermissions(
+    channelId: string,
+    toUserId: string,
+    parentId?: string
+  ): Promise<any> {
+    return Request.getUserChannelPermissions(channelId, toUserId, parentId);
+  }
+
+  /**
+   * 创建频道
+   * @param roomId 房间ID
+   * @param channelName 频道名称
+   * @param channelType 频道类型（0语音,1文字,2公告,3频道组,4临时,5临时管理器）
+   * @param apiType 线路类型（trtc/volc）
+   * @param parentId 频道组ID（可选）
+   * @returns Promise<any>
+   */
+  public async createChannel(
+    roomId: string,
+    channelName: string,
+    channelType: number,
+    apiType: string,
+    parentId?: string
+  ): Promise<any> {
+    return Request.createChannel({
+      room_id: roomId,
+      channel_name: channelName,
+      channel_type: channelType,
+      api_type: apiType,
+      parent_id: parentId,
+      nonce: Date.now().toString()
+    });
+  }
+
+  /**
+   * 删除频道
+   * @param channelId 频道ID
+   * @param roomId 房间ID
+   * @returns Promise<any>
+   */
+  public async deleteChannel(channelId: string, roomId: string): Promise<any> {
+    return Request.deleteChannel({
+      channel_id: channelId,
+      room_id: roomId
+    });
+  }
+
+  // ==================== 推流管理相关方法 ====================
+
+  /**
+   * 推流至语音频道
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @param streamUrl 源流URL
+   * @param operator 操作用户ID
+   * @param volume 音量（0-100，默认100）
+   * @param callbackUrl 回调链接（可选）
+   * @param seekSecond 指定播放起始时间（秒，可选）
+   * @param repeatNum 循环播放次数（-1为无限循环，默认1）
+   * @param maxDuration 最大播放时长（分钟，可选）
+   * @returns Promise<any>
+   */
+  public async pushStreamToChannel(
+    roomId: string,
+    channelId: string,
+    streamUrl: string,
+    operator: number,
+    volume: number = 100,
+    callbackUrl?: string,
+    seekSecond?: number,
+    repeatNum: number = 1,
+    maxDuration?: number
+  ): Promise<any> {
+    return Request.pushStreamToChannel({
+      room_id: roomId,
+      channel_id: channelId,
+      stream_url: streamUrl,
+      volume,
+      operator,
+      callback_url: callbackUrl,
+      seek_second: seekSecond,
+      repeat_num: repeatNum,
+      max_duration: maxDuration
+    });
+  }
+
+  /**
+   * 停止推流至语音频道
+   * @param taskId 任务ID
+   * @returns Promise<any>
+   */
+  public async stopStreamToChannel(taskId: string): Promise<any> {
+    return Request.stopStreamToChannel(taskId);
+  }
+
+  // ==================== 音频控制相关方法 ====================
+
+  /**
+   * 房间内麦克风静音/解禁
+   * @param roomId 房间ID
+   * @param mute 是否静音
+   * @param toUserId 被操作用户ID
+   * @param channelId 频道ID
+   * @returns Promise<any>
+   */
+  public async muteRoomMicrophone(
+    roomId: string,
+    mute: boolean,
+    toUserId: number,
+    channelId: string
+  ): Promise<any> {
+    return Request.muteRoomMicrophone({
+      room_id: roomId,
+      mute,
+      to_user_id: toUserId,
+      channel_id: channelId
+    });
+  }
+
+  /**
+   * 房间内扬声器静音/解禁
+   * @param roomId 房间ID
+   * @param mute 是否静音
+   * @param toUserId 被操作用户ID
+   * @param channelId 频道ID
+   * @returns Promise<any>
+   */
+  public async muteRoomSpeaker(
+    roomId: string,
+    mute: boolean,
+    toUserId: number,
+    channelId: string
+  ): Promise<any> {
+    return Request.muteRoomSpeaker({
+      room_id: roomId,
+      mute,
+      to_user_id: toUserId,
+      channel_id: channelId
+    });
+  }
+
+  // ==================== 邀请链接相关方法 ====================
+
+  /**
+   * 创建频道邀请链接
+   * @param userId 用户ID
+   * @param roomId 房间ID
+   * @param channelId 频道ID
+   * @returns Promise<any>
+   */
+  public async createInviteCode(userId: string, roomId: string, channelId: string): Promise<any> {
+    return Request.createInviteCode(userId, roomId, channelId);
+  }
+
+  // ==================== 认证相关方法 ====================
+
+  /**
+   * 获取授权码
+   * @param clientId 客户端ID
+   * @param redirectUri 回调地址
+   * @param scope 权限范围
+   * @returns Promise<any>
+   */
+  public async getOAuthCode(clientId: string, redirectUri: string, scope: string): Promise<any> {
+    return Request.getOAuthCode(clientId, redirectUri, scope);
+  }
+
+  /**
+   * 刷新AccessToken
+   * @param clientId 客户端ID
+   * @param clientSecret 客户端密钥
+   * @param refreshToken 刷新令牌
+   * @param grantType 授权类型（默认authorization_code）
+   * @returns Promise<any>
+   */
+  public async refreshToken(
+    clientId: string,
+    clientSecret: string,
+    refreshToken: string,
+    grantType: string = 'refresh_token'
+  ): Promise<any> {
+    return Request.refreshToken({
+      grant_type: grantType,
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken
+    });
+  }
+
+  /**
+   * 获取用户信息
+   * @param clientId 客户端ID
+   * @param redirectUri 回调地址
+   * @param scope 权限范围
+   * @param userId 用户ID（可选）
+   * @returns Promise<any>
+   */
+  public async getAccountInfo(
+    clientId: string,
+    redirectUri: string,
+    scope: string,
+    userId?: string
+  ): Promise<any> {
+    return Request.getAccountInfo(clientId, redirectUri, scope, userId);
+  }
+
+  /**
+   * 获取用户房间内语音游戏时长
+   * @param roomId 房间ID（可选）
+   * @param beginTime 开始时间unix时间戳（可选）
+   * @param endTime 结束时间unix时间戳（可选）
+   * @param appid 游戏ID（可选）
+   * @returns Promise<any>
+   */
+  public async getChatDuration(
+    roomId?: string,
+    beginTime?: string,
+    endTime?: string,
+    appid?: string
+  ): Promise<any> {
+    return Request.getChatDuration(roomId, beginTime, endTime, appid);
+  }
+
   // ==================== 消息操作相关方法 ====================
 
   /**
