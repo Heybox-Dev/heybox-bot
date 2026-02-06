@@ -33,7 +33,7 @@ function getDefaultPackageJson(config: InitConfig) {
     author: config.author,
     license: 'MIT',
     dependencies: {
-      'heybox-bot': '^1.3.1'
+      'heybox-bot': '^1.3.48'
     },
     devDependencies: {
       '@types/node': '^20.11.0',
